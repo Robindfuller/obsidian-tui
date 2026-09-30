@@ -12,6 +12,7 @@ pub mod harness;
 pub mod input;
 pub mod md;
 pub mod rich;
+pub mod settings;
 pub mod theme;
 pub mod util;
 pub mod vault;

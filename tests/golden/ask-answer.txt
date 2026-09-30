@@ -1,5 +1,5 @@
 ╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ Ask your notes ───────────────────────────────────────────────────────────────╮
-│ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ answering: test model ▾  ·  new chat                                           │
+│ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ answering: test model ▾  ·  settings  ·  new chat                              │
 │▌All notes             8││────────────────────────────────────────││ ────────────────────────────────────────────────────────────────────────────── │
 │ Recent                8││▌2026-09-28  Daily                   9d ││ › what is the budget for the garden beds?                                      │
 │ Graph                 8││ 2026-09-29  Daily                   8d ││                                                                                │
@@ -27,4 +27,4 @@
 │                        ││                                        ││ ────────────────────────────────────────────────────────────────────────────── │
 │                        ││                                        ││ › ask about your notes                                                         │
 ╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────────────────────────── enter ask · esc close ─╯
- enter ask  esc close  ↑↓ pgup pgdn scroll  ^O model   ^N new chat
+ enter ask  esc close  ↑↓ pgup pgdn scroll  ^O settings   ^N new chat

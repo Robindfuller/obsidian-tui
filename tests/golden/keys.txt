@@ -16,6 +16,7 @@
 │ #re││                      │ space  pgup pgdn  scroll the note                          │                            │
 │ #st││                      │ J K  home end     scroll a line / to the ends              │                            │
 │    ││                      │ a                 ask about your notes (esc closes)        │                            │
+│    ││                      │ ,                 settings (ctrl+o while asking)           │                            │
 │    ││                      │ e                 edit here (ctrl+s saves, esc done)       │                            │
 │    ││                      │ E                 edit in your own $EDITOR                 │                            │
 │    ││                      │ o                 open in Obsidian                         │                            │
@@ -25,6 +26,5 @@
 │    ││                      │ {  }              narrower / wider list (or drag its edge) │                            │
 │    ││                      │ r                 read the vault again                     │                            │
 │    ││                      │ q                 quit                                     │                            │
-│    ││                      ╰────────────────────────────────────────────────────────────╯                            │
-╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
+╰────╯╰───────────────────── ╰────────────────────────────────────────────────────────────╯t · E $EDITOR · o obsidian ─╯
  ↑↓ notes   enter open   / search   tab links   [ ] back   a ask   e edit   E $EDITOR   b sidebar   ? keys   q quit

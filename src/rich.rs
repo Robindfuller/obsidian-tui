@@ -43,6 +43,11 @@ pub enum Act {
     AskModel,
     /// start the ask pane's conversation again
     AskNew,
+    /// the Settings panel: open it, pick a row (enter on it), step a value, close
+    Settings,
+    SetRow(usize),
+    SetStep(usize, i64),
+    SetClose,
     /// edit in $VISUAL / $EDITOR
     EditOutside,
     Obsidian,

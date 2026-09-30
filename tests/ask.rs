@@ -77,11 +77,14 @@ fn new_chat_and_the_model_menu() {
     t.key(KeyCode::Enter);
     t.wait();
     assert_eq!(t.app.chat.turns.len(), 1);
-    let s = t.press(KeyCode::Char('o'), KeyModifiers::CONTROL);
+    let s = t.click_text("test model ▾");
     assert!(s.contains("Answer with"));
     assert!(s.contains("● test model"));
     t.key(KeyCode::Esc);
     assert!(t.app.asking, "esc closed the menu, not the pane");
+    let s = t.press(KeyCode::Char('o'), KeyModifiers::CONTROL);
+    assert!(s.contains("ASK YOUR NOTES"), "ctrl+o is the settings");
+    t.key(KeyCode::Esc);
     let s = t.click_text("new chat");
     assert!(t.app.chat.turns.is_empty());
     assert!(s.contains("Ask a question about the notes"));
@@ -129,7 +132,7 @@ fn fern(name: &str) -> Vault {
 }
 
 fn keys(v: &Vault, q: &str, open: Option<&str>, before: &[String]) -> Vec<String> {
-    gather(v, q, open, before, 12_000).into_iter().map(|p| p.key).collect()
+    gather(v, q, open, before, 6, 12_000).into_iter().map(|p| p.key).collect()
 }
 
 #[test]
@@ -146,7 +149,7 @@ fn this_note_means_the_open_one() {
     let v = fern("this_note_means_the_open_one");
     let k = keys(&v, "summarise this note", Some("Reading/Books to read.md"), &[]);
     assert_eq!(k, vec!["Reading/Books to read.md"]);
-    let picks = gather(&v, "summarise this note", Some("Reading/Books to read.md"), &[], 12_000);
+    let picks = gather(&v, "summarise this note", Some("Reading/Books to read.md"), &[], 6, 12_000);
     assert!(picks[0].open);
 }
 

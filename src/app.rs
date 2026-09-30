@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{Value, json};
 
-use crate::ask::{Chat, Model};
+use crate::ask::{Chat, Conf, Model};
 use crate::draw::Hit;
 use crate::editor::{Clip, Editor, Out, Saved};
 use crate::graph::{Graph, View, Xform};
@@ -176,6 +176,10 @@ pub struct App {
     pub ask_model: Option<Model>,
     ask_saved: Option<String>,
     ask_models_cache: Vec<Model>,
+    /// the ask pane's settings
+    pub ask_conf: Conf,
+    /// the Settings panel, while it's open
+    pub settings: Option<crate::settings::Panel>,
     /// why there's no local model, when there isn't one
     pub ask_why: Option<String>,
     /// the pane a narrow window showed before asking
@@ -210,10 +214,19 @@ pub fn state_file() -> PathBuf {
     base.join("obsidian-tui").join("state.json")
 }
 
-/// The model picked in the ask pane last time, if any.
-pub fn saved_model() -> Option<String> {
-    let st: Value = std::fs::read_to_string(state_file()).ok().and_then(|s| serde_json::from_str(&s).ok())?;
-    st["ask_model"].as_str().map(str::to_string)
+/// The model picked in the ask pane last time, if any, and the settings.
+pub fn saved_ask() -> (Option<String>, Conf) {
+    let st: Value = std::fs::read_to_string(state_file())
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or(json!({}));
+    ask_state(&st)
+}
+
+fn ask_state(st: &Value) -> (Option<String>, Conf) {
+    // "ask_model" is where the model was kept before there were settings
+    let model = st["ask"]["model"].as_str().or(st["ask_model"].as_str()).map(str::to_string);
+    (model, Conf::from_json(&st["ask"]))
 }
 
 fn slug(s: &str) -> String {
@@ -297,6 +310,8 @@ impl App {
             ask_model: None,
             ask_saved: None,
             ask_models_cache: vec![],
+            ask_conf: Conf::default(),
+            settings: None,
             ask_why: None,
             ask_from: Stage::List,
             watch_rx: None,
@@ -321,7 +336,7 @@ impl App {
         self.rail_collapsed = st["rail_collapsed"].as_bool().unwrap_or(false);
         self.sort_mod = st["sort_mod"].as_bool().unwrap_or(false);
         self.list_w = st["list_w"].as_u64().map(|v| v as u16).unwrap_or(42);
-        self.ask_saved = st["ask_model"].as_str().map(str::to_string);
+        (self.ask_saved, self.ask_conf) = ask_state(&st);
         let v = &st["vaults"][self.vault_id()];
         if let Some(open) = v["open"].as_array() {
             self.open_folders = open.iter().filter_map(|x| x.as_str().map(str::to_string)).collect();
@@ -356,10 +371,15 @@ impl App {
         st["rail_collapsed"] = json!(self.rail_collapsed);
         st["sort_mod"] = json!(self.sort_mod);
         st["list_w"] = json!(self.list_w);
+        let mut ask = self.ask_conf.to_json();
         if let Some(m) = self.ask_model.as_ref().map(|m| m.id.clone()).or(self.ask_saved.clone())
             && m != "fake"
         {
-            st["ask_model"] = json!(m);
+            ask["model"] = json!(m);
+        }
+        st["ask"] = ask;
+        if let Some(o) = st.as_object_mut() {
+            o.remove("ask_model");
         }
         if !st["vaults"].is_object() {
             st["vaults"] = json!({});
@@ -1419,6 +1439,10 @@ impl App {
             Act::Ask => self.open_ask(),
             Act::AskModel => self.model_menu(),
             Act::AskNew => self.new_chat(),
+            Act::Settings => self.open_settings(),
+            Act::SetRow(i) => self.settings_row(*i),
+            Act::SetStep(i, d) => self.settings_step(*i, *d),
+            Act::SetClose => self.close_settings(),
             Act::EditOutside => self.edit(None),
             Act::Obsidian => {
                 if let Some(k) = self.note.clone() {
@@ -1480,12 +1504,12 @@ impl App {
 
     /// The remembered model if it's still there, else the biggest local
     /// one, else Claude.
-    fn find_model(&mut self) {
+    pub(crate) fn find_model(&mut self) {
         if self.headless {
             self.ask_model = Some(crate::ask::fake_model());
             return;
         }
-        let (models, why) = crate::ask::all_models();
+        let (models, why) = crate::ask::all_models(&self.ask_conf.ollama());
         self.ask_why = why;
         let saved = self.ask_saved.as_ref().and_then(|s| models.iter().find(|m| &m.id == s)).cloned();
         self.ask_model = saved.or_else(|| models.first().cloned());
@@ -1509,7 +1533,7 @@ impl App {
             return;
         };
         let open = self.note.clone();
-        self.chat.ask(&self.vault, open.as_deref(), &m);
+        self.chat.ask(&self.vault, open.as_deref(), &m, &self.ask_conf);
         self.dirty = true;
     }
 
@@ -1526,7 +1550,7 @@ impl App {
                     self.quit = true;
                 }
             }
-            KeyCode::Char('o') if ctrl => self.model_menu(),
+            KeyCode::Char('o') if ctrl => self.open_settings(),
             KeyCode::Char('n') if ctrl => self.new_chat(),
             KeyCode::Esc => {
                 if self.chat.busy() {
@@ -1565,7 +1589,7 @@ impl App {
 
     pub fn model_menu(&mut self) {
         if !self.headless {
-            let (models, why) = crate::ask::all_models();
+            let (models, why) = crate::ask::all_models(&self.ask_conf.ollama());
             self.ask_why = why;
             self.show_models(models);
         } else {
@@ -1662,6 +1686,7 @@ impl App {
             ("space  pgup pgdn", "scroll the note"),
             ("J K  home end", "scroll a line / to the ends"),
             ("a", "ask about your notes (esc closes)"),
+            (",", "settings (ctrl+o while asking)"),
             ("e", "edit here (ctrl+s saves, esc done)"),
             ("E", "edit in your own $EDITOR"),
             ("o", "open in Obsidian"),

@@ -28,6 +28,11 @@ impl App {
             }
             return;
         }
+        // the Settings panel, unless the model list is open over it
+        if self.settings.is_some() && self.modals.is_empty() {
+            self.settings_key(&k);
+            return;
+        }
         // so does the ask pane: typing is the question
         if self.asking && self.modals.is_empty() {
             self.ask_key(&k);
@@ -154,6 +159,7 @@ impl App {
             KeyCode::Home => self.note_scroll = 0,
             KeyCode::End => self.note_scroll = usize::MAX / 2,
             KeyCode::Char('a') if !ctrl => self.open_ask(),
+            KeyCode::Char(',') => self.open_settings(),
             KeyCode::Char('e') => self.open_editor(None),
             KeyCode::Char('E') => self.edit(None),
             KeyCode::Char('o') => self.run(&Act::Obsidian),
@@ -281,6 +287,10 @@ impl App {
                 Some(f) => f.insert(s.lines().next().unwrap_or("")),
                 None => ed.insert(s),
             }
+            return;
+        }
+        if let Some(ed) = self.settings.as_mut().and_then(|p| p.edit.as_mut()) {
+            ed.insert(&s.split_whitespace().collect::<Vec<_>>().join(" "));
             return;
         }
         if self.asking {
@@ -411,6 +421,9 @@ impl App {
     /// The wheel scrolls whatever is under the mouse, and never moves focus.
     pub fn wheel(&mut self, x: u16, y: u16, d: i64) {
         self.dirty = true;
+        if self.settings.is_some() && self.modals.is_empty() {
+            return;
+        }
         let target = self
             .hits
             .iter()

@@ -49,14 +49,15 @@ fn enter() -> io::Result<()> {
 fn ask_once(vault: &std::path::Path, q: &str, model: Option<String>) -> i32 {
     use obsidian_tui::ask;
     let mut app = App::new(vault);
-    let (models, why) = ask::all_models();
+    let conf = obsidian_tui::app::saved_ask().1;
+    let (models, why) = ask::all_models(&conf.ollama());
     let m = match model {
         Some(id) => {
             let id = if id.starts_with("ollama:") || id.starts_with("claude:") { id } else if id == "haiku" || id == "sonnet" || id == "opus" { format!("claude:{id}") } else { format!("ollama:{id}") };
             ask::Model { label: id.clone(), hint: String::new(), id }
         }
         None => {
-            let saved = obsidian_tui::app::saved_model();
+            let saved = obsidian_tui::app::saved_ask().0;
             match saved.and_then(|s| models.iter().find(|m| m.id == s).cloned()).or_else(|| models.first().cloned()) {
                 Some(m) => m,
                 None => {
@@ -68,7 +69,7 @@ fn ask_once(vault: &std::path::Path, q: &str, model: Option<String>) -> i32 {
         }
     };
     app.chat.input.set(q);
-    app.chat.ask(&app.vault, None, &m);
+    app.chat.ask(&app.vault, None, &m, &conf);
     let names = ask::names(&app.vault, &app.chat.turns[0].sources);
     let list: Vec<String> = names.into_iter().map(|(_, n)| n).collect();
     eprintln!("[{} · {}]", m.id, if list.is_empty() { "no notes matched".to_string() } else { list.join(", ") });

@@ -300,6 +300,7 @@ pub fn draw(app: &mut App, buf: &mut Buffer) {
     let kb = app.keybar();
     let kb = wrap(&kb, g.keybar.width as usize).into_iter().next().unwrap_or_default();
     p.line(g.keybar.x + 1, g.keybar.y, &kb, g.keybar.right(), bg);
+    crate::settings::draw_settings(app, &mut p);
     if !app.modals.is_empty() {
         draw_menu(app, &mut p);
     }
@@ -577,7 +578,7 @@ fn draw_list(app: &mut App, p: &mut P, r: Rect) {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn input_box(
+pub(crate) fn input_box(
     p: &mut P,
     ed: &mut crate::input::LineEdit,
     x: u16,
@@ -947,6 +948,8 @@ fn draw_ask(app: &mut App, p: &mut P, r: Rect) {
         }
         None => head.push(sp("pick what answers ▾", dim).on(Act::AskModel)),
     }
+    head.push(sp("  ·  ", faint));
+    head.push(sp("settings", dim).on(Act::Settings));
     if !app.chat.turns.is_empty() {
         head.push(sp("  ·  ", faint));
         head.push(sp("new chat", dim).on(Act::AskNew));
@@ -1028,7 +1031,7 @@ fn ask_lines(app: &mut App, w: usize) -> Vec<Line> {
                 let frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
                 let f = frames[(t.at.elapsed().as_millis() / 100) as usize % frames.len()];
                 let k = t.sources.len();
-                let what = if k == 0 {
+                let what = if t.thinking || k == 0 {
                     "Thinking…".to_string()
                 } else {
                     format!("Reading {k} note{}…", if k == 1 { "" } else { "s" })
@@ -1307,6 +1310,19 @@ impl App {
             out.extend(n("shift+arrows", "select"));
             return out;
         }
+        if let Some(s) = &self.settings {
+            let n = |key: &str, what: &str| vec![sp(key, ink), sp(format!(" {what}"), faint), plain("  ")];
+            if s.edit.is_some() {
+                out.extend(n("enter", "keep"));
+                out.extend(n("esc", "undo"));
+            } else {
+                out.extend(n("↑↓", "pick"));
+                out.extend(n("←→", "change"));
+                out.extend(n("enter", "edit"));
+                out.extend(n("esc", "close"));
+            }
+            return out;
+        }
         if self.asking {
             let n = |key: &str, what: &str| vec![sp(key, ink), sp(format!(" {what}"), faint), plain("  ")];
             if self.chat.busy() {
@@ -1316,7 +1332,7 @@ impl App {
                 out.extend(n("esc", "close"));
             }
             out.extend(n("↑↓ pgup pgdn", "scroll"));
-            out.extend(k("^O", "model", Some(Act::AskModel)));
+            out.extend(k("^O", "settings", Some(Act::Settings)));
             out.extend(k("^N", "new chat", Some(Act::AskNew)));
             return out;
         }

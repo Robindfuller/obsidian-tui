@@ -1,0 +1,34 @@
+╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ 2026-09-28 ───────────────────────────────────────────────────────────────────╮
+│ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ Daily  ·  edited 9d ago                                                        │
+│▌All notes             8││────────────────────────────────────────││                                                                                │
+│ Recent                8││▌2026-09-28  Daily                   9d ││  Note   Links 0   Outline 1   Graph                                            │
+│ Graph                 8││ 2026-09-29  Daily                   8d ││ ━━━━━━──────────────────────────────────────────────────────────────────────── │
+│ FOLDERS                ││ Books to read  Reading              3d ││                                                                                │
+│   Daily               2││ Garden Plan  Projects               6d ││ Sunday                                                                         │
+│ ▸ Projects            3││ Ideas   ╭─ Settings ─────────────────────────────────────────────────────────────────╮─────────────────────────────────  │
+│   Reading             1││ Ideas  P│ ASK YOUR NOTES                                                             │                                   │
+│ TAGS                   ││ Shelves │▌Model                   test model ▾                                       │lan. #journal                      │
+│ #garden               2││ Welcome │ Ollama address          this computer                                      │                                   │
+│ #guide                1││         │ Notes per question      ‹ 6 ›                                              │                                   │
+│ #inbox                1││         │ Reading, own computer   ‹ 12,000 characters ›                              │                                   │
+│ #journal              2││         │ Reading, Claude         ‹ 40,000 characters ›                              │                                   │
+│ #projects/garden      2││         │ Ollama memory           ‹ 8,192 tokens ›                                   │                                   │
+│ #reading              1││         │ Think first             ‹ off ›                                            │                                   │
+│ #start                1││         │ Follow-ups remember     ‹ 4 turns ›                                        │                                   │
+│                        ││         │ Extra instructions      none                                               │                                   │
+│                        ││         │ Reset to defaults                                                          │                                   │
+│                        ││         │                                                                            │                                   │
+│                        ││         │ ────────────────────────────────────────────────────────────────────────── │                                   │
+│                        ││         │ What answers your questions. A model on this computer (Ollama) keeps your  │                                   │
+│                        ││         │ notes private; Claude sends the question and the notes that match it to    │                                   │
+│                        ││         │ Claude, on your Claude plan. Enter shows the list.                         │                                   │
+│                        ││         │                                                                            │                                   │
+│                        ││         ╰───────────────────────────── ↑↓ pick · ←→ change · enter edit · esc close ─╯                                   │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰────────────────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
+ ↑↓ pick  ←→ change  enter edit  esc close

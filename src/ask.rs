@@ -20,8 +20,77 @@ use crate::input::LineEdit;
 use crate::md::Rendered;
 use crate::vault::{Note, Vault};
 
-/// How many notes go with a question, at most.
-const MAX_NOTES: usize = 6;
+/// The ask pane's settings, changed in the Settings panel and kept in the
+/// state file under "ask".
+#[derive(Clone, Debug, PartialEq)]
+pub struct Conf {
+    /// where Ollama is; empty means OLLAMA_HOST, else this computer
+    pub host: String,
+    /// notes sent with a question, at most
+    pub notes: usize,
+    /// note text sent, in characters: to a local model, and to Claude
+    pub local_chars: usize,
+    pub claude_chars: usize,
+    /// Ollama's context window, in tokens
+    pub ctx: usize,
+    /// let models that can reason think first
+    pub think: bool,
+    /// earlier questions and answers sent with a follow-up
+    pub turns: usize,
+    /// added to the model's instructions
+    pub extra: String,
+}
+
+impl Default for Conf {
+    fn default() -> Conf {
+        Conf {
+            host: String::new(),
+            notes: 6,
+            local_chars: 12_000,
+            claude_chars: 40_000,
+            ctx: 8192,
+            think: false,
+            turns: 4,
+            extra: String::new(),
+        }
+    }
+}
+
+impl Conf {
+    /// From the state file, anything missing or odd left at its default.
+    pub fn from_json(v: &Value) -> Conf {
+        let d = Conf::default();
+        let num = |k: &str, def: usize, lo: usize, hi: usize| v[k].as_u64().map(|x| (x as usize).clamp(lo, hi)).unwrap_or(def);
+        Conf {
+            host: v["host"].as_str().unwrap_or("").trim().to_string(),
+            notes: num("notes", d.notes, 1, 20),
+            local_chars: num("local_chars", d.local_chars, 1000, 200_000),
+            claude_chars: num("claude_chars", d.claude_chars, 1000, 400_000),
+            ctx: num("ctx", d.ctx, 1024, 262_144),
+            think: v["think"].as_bool().unwrap_or(d.think),
+            turns: num("turns", d.turns, 0, 20),
+            extra: v["extra"].as_str().unwrap_or("").to_string(),
+        }
+    }
+
+    pub fn to_json(&self) -> Value {
+        json!({
+            "host": self.host,
+            "notes": self.notes,
+            "local_chars": self.local_chars,
+            "claude_chars": self.claude_chars,
+            "ctx": self.ctx,
+            "think": self.think,
+            "turns": self.turns,
+            "extra": self.extra,
+        })
+    }
+
+    /// Where to reach Ollama.
+    pub fn ollama(&self) -> String {
+        ollama_host(&self.host)
+    }
+}
 
 /// Words that say nothing about which note is meant.
 const STOP: &[&str] = &[
@@ -84,7 +153,7 @@ pub struct Pick {
 /// `open` is the note on screen: it's added when the question points at it
 /// ("this note") or nothing else matched. `before` are the last answer's
 /// notes, kept for a follow-up that names nothing new.
-pub fn gather(v: &Vault, q: &str, open: Option<&str>, before: &[String], budget: usize) -> Vec<Pick> {
+pub fn gather(v: &Vault, q: &str, open: Option<&str>, before: &[String], max: usize, budget: usize) -> Vec<Pick> {
     let ws = words(q);
     // BM25: rarer words weigh more, and a word counts for less in a long note
     let n = v.notes.len().max(1) as f64;
@@ -131,12 +200,12 @@ pub fn gather(v: &Vault, q: &str, open: Option<&str>, before: &[String], budget:
     let mut keys: Vec<String> = scored
         .iter()
         .take_while(|(s, _)| *s >= best * 0.2)
-        .take(MAX_NOTES)
+        .take(max)
         .map(|(_, i)| v.notes[*i].key.clone())
         .collect();
     if keys.len() < 2 {
         for k in before {
-            if keys.len() < MAX_NOTES && !keys.contains(k) && v.note(k).is_some() {
+            if keys.len() < max && !keys.contains(k) && v.note(k).is_some() {
                 keys.push(k.clone());
             }
         }
@@ -273,8 +342,9 @@ impl Model {
     }
 }
 
-pub fn ollama_host() -> String {
-    let h = std::env::var("OLLAMA_HOST").unwrap_or_default();
+/// Where Ollama is: the setting, else OLLAMA_HOST, else this computer.
+pub fn ollama_host(set: &str) -> String {
+    let h = if set.trim().is_empty() { std::env::var("OLLAMA_HOST").unwrap_or_default() } else { set.to_string() };
     let h = h.trim().trim_end_matches('/');
     if h.is_empty() {
         return "http://localhost:11434".into();
@@ -296,8 +366,8 @@ fn agent(connect: Duration, total: Option<Duration>) -> ureq::Agent {
 }
 
 /// The chat models Ollama has, biggest first.
-pub fn ollama_models() -> Result<Vec<Model>, String> {
-    let url = format!("{}/api/tags", ollama_host());
+pub fn ollama_models(host: &str) -> Result<Vec<Model>, String> {
+    let url = format!("{host}/api/tags");
     let mut r = agent(Duration::from_millis(800), Some(Duration::from_secs(3)))
         .get(&url)
         .call()
@@ -335,16 +405,17 @@ pub fn claude_models() -> Vec<Model> {
     let hint = "Claude · uses your Claude plan".to_string();
     vec![
         Model { id: "claude:haiku".into(), label: "Claude Haiku".into(), hint: hint.clone() },
-        Model { id: "claude:sonnet".into(), label: "Claude Sonnet".into(), hint },
+        Model { id: "claude:sonnet".into(), label: "Claude Sonnet".into(), hint: hint.clone() },
+        Model { id: "claude:opus".into(), label: "Claude Opus".into(), hint },
     ]
 }
 
 /// Everything there is to ask, and why Ollama isn't in the list if it isn't.
-pub fn all_models() -> (Vec<Model>, Option<String>) {
-    let (mut out, why) = match ollama_models() {
+pub fn all_models(host: &str) -> (Vec<Model>, Option<String>) {
+    let (mut out, why) = match ollama_models(host) {
         Ok(m) if m.is_empty() => (vec![], Some("Ollama has no models yet. Try: ollama pull llama3.2".to_string())),
         Ok(m) => (m, None),
-        Err(_) => (vec![], Some(format!("Ollama isn't running at {}.", ollama_host()))),
+        Err(_) => (vec![], Some(format!("Ollama isn't running at {host}."))),
     };
     if have_claude() {
         out.extend(claude_models());
@@ -361,6 +432,8 @@ pub fn fake_model() -> Model {
 /// What the model sends back, a piece at a time.
 pub enum Msg {
     Text(String),
+    /// a reasoning model is thinking before it answers
+    Thinking,
     Done,
     Err(String),
 }
@@ -373,6 +446,8 @@ pub struct Turn {
     pub sources: Vec<String>,
     pub err: Option<String>,
     pub done: bool,
+    /// the model's thinking, before any answer
+    pub thinking: bool,
     pub at: Instant,
     /// the answer drawn: text length, width, theme generation
     pub cache: Option<(usize, usize, u64, std::rc::Rc<Rendered>)>,
@@ -432,6 +507,14 @@ impl Chat {
         let mut end = false;
         loop {
             match rx.try_recv() {
+                Ok(Msg::Thinking) => {
+                    if let Some(t) = self.turns.last_mut()
+                        && !t.thinking
+                    {
+                        t.thinking = true;
+                        changed = true;
+                    }
+                }
                 Ok(Msg::Text(s)) => {
                     if let Some(t) = self.turns.last_mut() {
                         t.a.push_str(&s);
@@ -471,7 +554,7 @@ impl Chat {
     }
 
     /// Send the question in the box, with the notes that match it.
-    pub fn ask(&mut self, v: &Vault, open: Option<&str>, model: &Model) {
+    pub fn ask(&mut self, v: &Vault, open: Option<&str>, model: &Model, conf: &Conf) {
         let q = self.input.value().trim().to_string();
         if q.is_empty() || self.busy() {
             return;
@@ -479,15 +562,16 @@ impl Chat {
         self.input.set("");
         let before = self.turns.last().map(|t| t.sources.clone()).unwrap_or_default();
         // a local model gets less to read: it's slower, and its window smaller
-        let budget = if model.local() { 12_000 } else { 40_000 };
-        let picks = gather(v, &q, open, &before, budget);
-        let (system, messages) = prompt(v, &self.turns, &q, &picks);
+        let budget = if model.local() { conf.local_chars } else { conf.claude_chars };
+        let picks = gather(v, &q, open, &before, conf.notes, budget);
+        let (system, messages) = prompt(v, &self.turns, &q, &picks, conf);
         self.turns.push(Turn {
             q,
             a: String::new(),
             sources: picks.iter().map(|p| p.key.clone()).collect(),
             err: None,
             done: false,
+            thinking: false,
             at: Instant::now(),
             cache: None,
         });
@@ -497,13 +581,14 @@ impl Chat {
         self.rx = Some(rx);
         self.stop = Some(stop.clone());
         let id = model.id.clone();
+        let conf = conf.clone();
         if id == "fake" {
             fake(&picks, &tx);
             return;
         }
         std::thread::spawn(move || {
             let r = if let Some(m) = id.strip_prefix("ollama:") {
-                ollama(m, &system, &messages, &tx, &stop)
+                ollama(m, &system, &messages, &conf, &tx, &stop)
             } else if let Some(m) = id.strip_prefix("claude:") {
                 claude(m, &system, &messages, &tx, &stop)
             } else {
@@ -533,8 +618,8 @@ fn today() -> String {
 }
 
 /// The instructions, and the chat so far with the notes on the new question.
-pub fn prompt(v: &Vault, turns: &[Turn], q: &str, picks: &[Pick]) -> (String, Vec<(String, String)>) {
-    let system = format!(
+pub fn prompt(v: &Vault, turns: &[Turn], q: &str, picks: &[Pick], conf: &Conf) -> (String, Vec<(String, String)>) {
+    let mut system = format!(
         "You help someone find things in their own notes, an Obsidian vault called \"{}\". Today is {}.\n\
          Answer from the notes you're given, and nothing else. When you use a note, name it as a wiki link \
          with its exact title, like [[Garden Plan]]. If the notes don't answer the question, say so plainly; \
@@ -542,9 +627,13 @@ pub fn prompt(v: &Vault, turns: &[Turn], q: &str, picks: &[Pick]) -> (String, Ve
         v.name,
         today()
     );
+    if !conf.extra.trim().is_empty() {
+        system.push_str("\n\n");
+        system.push_str(conf.extra.trim());
+    }
     let mut messages = vec![];
     // the last few turns, without the notes that went with them
-    for t in turns.iter().rev().take(4).collect::<Vec<_>>().into_iter().rev() {
+    for t in turns.iter().rev().take(conf.turns).collect::<Vec<_>>().into_iter().rev() {
         if t.err.is_some() && t.answer().trim().is_empty() {
             continue;
         }
@@ -584,17 +673,36 @@ fn fake(picks: &[Pick], tx: &Sender<Msg>) {
     let _ = tx.send(Msg::Done);
 }
 
-fn ollama(model: &str, system: &str, messages: &[(String, String)], tx: &Sender<Msg>, stop: &AtomicBool) -> Result<(), String> {
-    let host = ollama_host();
+fn ollama(model: &str, system: &str, messages: &[(String, String)], conf: &Conf, tx: &Sender<Msg>, stop: &AtomicBool) -> Result<(), String> {
+    match ollama_chat(model, system, messages, conf, conf.think, tx, stop) {
+        // thinking asked of a model that can't: ask again without
+        Err(e) if conf.think && e.contains("does not support thinking") => {
+            ollama_chat(model, system, messages, conf, false, tx, stop)
+        }
+        r => r,
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn ollama_chat(
+    model: &str,
+    system: &str,
+    messages: &[(String, String)],
+    conf: &Conf,
+    think: bool,
+    tx: &Sender<Msg>,
+    stop: &AtomicBool,
+) -> Result<(), String> {
+    let host = conf.ollama();
     let mut msgs = vec![json!({"role": "system", "content": system})];
     msgs.extend(messages.iter().map(|(r, c)| json!({"role": r, "content": c})));
     let body = json!({
         "model": model,
         "messages": msgs,
         "stream": true,
-        // straight to the answer: a reasoning model's thinking is slow here
-        "think": false,
-        "options": {"num_ctx": 8192},
+        // straight to the answer unless asked: a reasoning model's thinking is slow
+        "think": think,
+        "options": {"num_ctx": conf.ctx},
     });
     let r = agent(Duration::from_secs(3), None)
         .post(&format!("{host}/api/chat"))
@@ -622,6 +730,9 @@ fn ollama(model: &str, system: &str, messages: &[(String, String)], tx: &Sender<
         let Ok(v) = serde_json::from_str::<Value>(&line) else { continue };
         if let Some(e) = v["error"].as_str() {
             return Err(format!("Ollama said: {e}"));
+        }
+        if v["message"]["thinking"].as_str().is_some_and(|s| !s.is_empty()) {
+            let _ = tx.send(Msg::Thinking);
         }
         if let Some(s) = v["message"]["content"].as_str()
             && !s.is_empty()
@@ -746,7 +857,7 @@ mod tests {
 
     #[test]
     fn think_blocks_are_hidden() {
-        let t = |a: &str| Turn { q: String::new(), a: a.into(), sources: vec![], err: None, done: false, at: Instant::now(), cache: None };
+        let t = |a: &str| Turn { q: String::new(), a: a.into(), sources: vec![], err: None, done: false, thinking: false, at: Instant::now(), cache: None };
         assert_eq!(t("<think>hmm</think>\n\nYes.").answer(), "Yes.");
         assert_eq!(t("<think>still going").answer(), "");
         assert_eq!(t("Plain.").answer(), "Plain.");

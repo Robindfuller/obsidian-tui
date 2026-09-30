@@ -100,7 +100,7 @@ it names are links: click one to open it. Under each answer, "Looked at"
 lists the notes it was given. Ask a follow-up and it remembers the
 conversation; `a` brings it back after you've gone to a note.
 
-What answers (click the name at the top, or ctrl+o, to change it):
+What answers (click the name at the top to change it):
 
 - **A model on your own computer**, through [Ollama](https://ollama.com).
   Nothing leaves your machine. Install Ollama and pull a model, for example
@@ -120,8 +120,27 @@ the one on screen. It never writes to the vault.
 | type, enter | ask |
 | ↑ ↓, pgup, pgdn, the wheel | scroll the conversation |
 | esc | stop the answer, or close the pane |
-| ctrl+o | pick what answers |
+| ctrl+o | settings (see below) |
 | ctrl+n | start a new conversation |
+
+### Settings
+
+Press `,` (or ctrl+o while asking, or click "settings") for the Settings
+panel. ↑ ↓ pick a setting and ← → change it; enter types into a text one or
+opens the list of models. Each has a line saying what it does, and every
+change is kept at once.
+
+| Setting | Default | What it is |
+| --- | --- | --- |
+| Model | the biggest local one | what answers |
+| Ollama address | this computer | where Ollama runs (`OLLAMA_HOST` works too) |
+| Notes per question | 6 | how many notes go with a question, at most |
+| Reading, own computer | 12,000 characters | how much note text a local model reads |
+| Reading, Claude | 40,000 characters | the same for Claude |
+| Ollama memory | 8,192 tokens | the model's context window; it warns if the notes won't fit |
+| Think first | off | let reasoning models think before answering (slower) |
+| Follow-ups remember | 4 turns | how much of the conversation goes with a follow-up |
+| Extra instructions | none | added to what the model is told, like "answer in bullet points" |
 
 From the command line, `obsidian-tui --ask "question" VAULT` prints the
 answer (and the notes it used) and exits; `--model llama3.2:3b` or
@@ -175,6 +194,7 @@ theirs, or keep editing. Files that aren't UTF-8 text are left alone: use `E`.
 | space, pgup, pgdn, ctrl+d, ctrl+u | scroll the note |
 | J K, home, end | scroll a line, or to the top or bottom |
 | a | ask a question about your notes (see Ask) |
+| , | settings |
 | e | edit the note here (see Editing) |
 | E | edit in `$VISUAL` / `$EDITOR` (notepad on Windows, else nano or vi) |
 | o | open the note in the Obsidian app |
@@ -208,7 +228,7 @@ Terminal, iTerm2, kitty, WezTerm, foot, ghostty, alacritty, GNOME Terminal
 and so on.
 
 It remembers the sidebar, sort, list width, open folders and the last note per
-vault, and the model you ask, in `~/.config/obsidian-tui/state.json`
+vault, and the ask settings, in `~/.config/obsidian-tui/state.json`
 (`%APPDATA%\obsidian-tui` on Windows).
 
 ## Develop

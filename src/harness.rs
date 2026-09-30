@@ -129,6 +129,7 @@ impl H {
                         "escape" | "esc" => KeyCode::Esc,
                         "tab" => KeyCode::Tab,
                         "space" => KeyCode::Char(' '),
+                        "comma" => KeyCode::Char(','),
                         _ if k.chars().count() == 1 => KeyCode::Char(k.chars().next().unwrap()),
                         _ => continue,
                     };
