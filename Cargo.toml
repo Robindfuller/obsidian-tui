@@ -1,6 +1,6 @@
 [package]
 name = "obsidian-tui"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "An Obsidian vault in the terminal: sidebar, notes, rendered Markdown, links and search"
 license = "MIT"
