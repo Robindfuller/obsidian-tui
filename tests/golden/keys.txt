@@ -18,7 +18,7 @@
 │    ││                      │ y  Y              copy [[link]] / path                     │                            │
 │    ││                      │ s                 sort by name or date                     │                            │
 │    ││                      │ b                 fold the sidebar                         │                            │
-│    ││                      │ {  }              narrower / wider list                    │                            │
+│    ││                      │ {  }              narrower / wider list (or drag its edge) │                            │
 │    ││                      │ r                 read the vault again                     │                            │
 │    ││                      │ q                 quit                                     │                            │
 │    ││                      ╰────────────────────────────────────────────────────────────╯                            │

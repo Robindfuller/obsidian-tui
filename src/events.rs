@@ -207,6 +207,32 @@ impl App {
 
     pub fn on_mouse(&mut self, m: MouseEvent) {
         let (x, y) = (m.column, m.row);
+        if self.dragging {
+            match m.kind {
+                MouseEventKind::Drag(_) => self.drag_to(x),
+                MouseEventKind::Up(_) => {
+                    self.dragging = false;
+                    self.dirty = true;
+                    self.save_state();
+                }
+                _ => {}
+            }
+            self.mouse = Some((x, y));
+            return;
+        }
+        // press on the edge between the list and the note (either border) to drag it
+        if m.kind == MouseEventKind::Down(MouseButton::Left)
+            && self.modals.is_empty()
+            && let Some(dx) = self.divider_x()
+            && (x == dx || x == dx + 1)
+            && y > 0
+            && y + 2 < self.size.1
+        {
+            self.dragging = true;
+            self.mouse = Some((x, y));
+            self.dirty = true;
+            return;
+        }
         match m.kind {
             MouseEventKind::Moved | MouseEventKind::Drag(_) => {
                 if self.mouse != Some((x, y)) {

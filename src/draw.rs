@@ -68,7 +68,7 @@ impl App {
                 (Some(Rect::new(rail_w, 0, rest, main_h)), None)
             }
         } else {
-            let lw = self.list_w.clamp(28, rest / 2);
+            let lw = self.list_w.clamp(28, rest.saturating_sub(40).max(28));
             (Some(Rect::new(rail_w, 0, lw, main_h)), Some(Rect::new(rail_w + lw, 0, rest - lw, main_h)))
         };
         Geo { rail: Rect::new(0, 0, rail_w, main_h), list, note, keybar: Rect::new(0, main_h, w, 1) }
@@ -448,6 +448,16 @@ fn draw_list(app: &mut App, p: &mut P, r: Rect) {
     }
     let soft = app.t.c("line-soft");
     p.put(inn.x, inn.y + 1, &"─".repeat(inn.width as usize), Style::default().fg(soft).bg(p.bg), inn.right());
+
+    // the right edge can be dragged: show it when the mouse is on it
+    let on_edge = app.dragging
+        || (app.modals.is_empty()
+            && app.divider_x().is_some_and(|dx| p.mouse.is_some_and(|(mx, my)| (mx == dx || mx == dx + 1) && my > r.y && my + 1 < r.bottom())));
+    if on_edge {
+        for y in r.y + 1..r.bottom() - 1 {
+            p.put(r.right() - 1, y, "┃", Style::default().fg(acc).bg(p.bg), r.right());
+        }
+    }
 
     let a = app.rows_area();
     let rh = app.row_h();

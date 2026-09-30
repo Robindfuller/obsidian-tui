@@ -332,3 +332,33 @@ fn folders_fold_and_open() {
     assert_eq!(t.app.view, "folder:Projects/Kitchen");
     assert_eq!(t.app.rows.len(), 1);
 }
+
+#[test]
+fn dragging_the_edge_resizes_the_list() {
+    use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    let mut t = h("drag", 150, 40);
+    t.render();
+    let ev = |kind, x| MouseEvent { kind, column: x, row: 10, modifiers: KeyModifiers::NONE };
+    let edge = t.app.divider_x().unwrap();
+    t.app.on_mouse(ev(MouseEventKind::Down(MouseButton::Left), edge));
+    assert!(t.app.dragging);
+    t.app.on_mouse(ev(MouseEventKind::Drag(MouseButton::Left), edge + 20));
+    t.render();
+    assert_eq!(t.app.divider_x(), Some(edge + 20), "the list follows the mouse");
+    // never so wide the note can't be read
+    t.app.on_mouse(ev(MouseEventKind::Drag(MouseButton::Left), 149));
+    let g = t.app.geo();
+    assert!(g.note.unwrap().width >= 40);
+    t.app.on_mouse(ev(MouseEventKind::Up(MouseButton::Left), 149));
+    assert!(!t.app.dragging);
+    assert_eq!(t.app.sel, Some("Daily/2026-09-28.md".into()), "a drag isn't a click on a row");
+    // up and down still move the list afterwards
+    t.key(KeyCode::Down);
+    assert_eq!(sel(&t), "Daily/2026-09-29.md");
+    // a narrow window has nothing to drag: the list, then enter for the note
+    let mut n = h("drag-narrow", 80, 24);
+    n.render();
+    assert_eq!(n.app.divider_x(), None);
+    n.key(KeyCode::Enter);
+    assert!(n.app.geo().list.is_none() && n.app.geo().note.is_some());
+}

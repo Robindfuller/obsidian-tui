@@ -78,10 +78,13 @@ once.
 | y, Y | copy `[[link]]` / the file's path (over OSC 52) |
 | s | sort by name or by date |
 | b, ctrl+b | fold the sidebar |
-| { } | narrower / wider note list |
+| { } | narrower / wider note list (or drag its edge) |
 | r | read the vault again |
 | ? | all of this, in the app |
 | q, ctrl+c | quit |
+
+Drag the edge between the note list and the note to make the list wider or
+narrower (the note always keeps at least 40 columns); it's remembered.
 
 Right-click a note in the list for a menu. In a narrow terminal (under 100
 columns) the list and the note take turns: enter opens the note full width,

@@ -116,6 +116,8 @@ pub struct App {
     pub narrow_note: bool,
     pub sort_mod: bool,
     pub list_w: u16,
+    /// dragging the edge between the list and the note
+    pub dragging: bool,
     pub modals: Vec<Modal>,
     pub toasts: Vec<Toast>,
     toast_id: u64,
@@ -209,6 +211,7 @@ impl App {
             narrow_note: false,
             sort_mod: false,
             list_w: 42,
+            dragging: false,
             modals: vec![],
             toasts: vec![],
             toast_id: 0,
@@ -1063,7 +1066,7 @@ impl App {
             ("y  Y", "copy [[link]] / path"),
             ("s", "sort by name or date"),
             ("b", "fold the sidebar"),
-            ("{  }", "narrower / wider list"),
+            ("{  }", "narrower / wider list (or drag its edge)"),
             ("r", "read the vault again"),
             ("q", "quit"),
         ];
@@ -1128,8 +1131,33 @@ impl App {
         self.size.0 < 100
     }
 
+    /// The widest the list may be: the note keeps at least 40 columns.
+    pub fn max_list_w(&self) -> u16 {
+        let rail = self.geo().rail.width;
+        self.size.0.saturating_sub(rail + 40).max(28)
+    }
+
+    /// The column the list's right edge is on, when there's room to drag it.
+    pub fn divider_x(&self) -> Option<u16> {
+        let g = self.geo();
+        match (g.list, g.note) {
+            (Some(l), Some(_)) => Some(l.right() - 1),
+            _ => None,
+        }
+    }
+
+    /// Drag the edge to column x (the list's right border lands there).
+    pub fn drag_to(&mut self, x: u16) {
+        let rail = self.geo().rail.width;
+        let w = (x + 1).saturating_sub(rail).clamp(28, self.max_list_w());
+        if w != self.list_w {
+            self.list_w = w;
+            self.dirty = true;
+        }
+    }
+
     pub fn set_list_width(&mut self, d: i64) {
-        self.list_w = (self.list_w as i64 + d).clamp(28, 90) as u16;
+        self.list_w = (self.list_w as i64 + d).clamp(28, self.max_list_w() as i64) as u16;
         self.save_state();
     }
 }
