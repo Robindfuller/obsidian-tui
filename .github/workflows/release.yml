@@ -1,0 +1,89 @@
+# On a v* tag: test on Linux, macOS and Windows, build a binary for each, and
+# attach them to a GitHub release. Run it by hand (workflow_dispatch) to get
+# the binaries as build artifacts without making a release.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            name: obsidian-tui-linux-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            name: obsidian-tui-macos-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: obsidian-tui-macos-x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: obsidian-tui-windows-x86_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: musl tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Test
+        # the Intel Mac build is a cross build on an Apple Silicon runner
+        if: matrix.target != 'x86_64-apple-darwin'
+        run: cargo test --locked
+
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Package
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/obsidian-tui README.md dist/
+          tar -C dist -czf ${{ matrix.name }}.tar.gz .
+
+      - name: Package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/obsidian-tui.exe, README.md dist/
+          Compress-Archive -Path dist/* -DestinationPath ${{ matrix.name }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            ${{ matrix.name }}.tar.gz
+            ${{ matrix.name }}.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
