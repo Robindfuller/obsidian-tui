@@ -13,21 +13,25 @@ Runs on Linux, macOS and Windows (Windows Terminal).
 
 ## Install
 
-With Rust installed (https://rustup.rs):
+Download the archive for your system from the
+[latest release](https://github.com/Robindfuller/obsidian-tui/releases/latest),
+unpack it and put `obsidian-tui` (`obsidian-tui.exe` on Windows) somewhere on
+your PATH.
+
+- **Windows:** `obsidian-tui-windows-x86_64.zip`. Run it in Windows Terminal:
+  `obsidian-tui.exe C:\path\to\vault`. The first time, Windows may say it
+  protected your PC because the app isn't signed: click **More info**, then
+  **Run anyway**.
+- **macOS:** `obsidian-tui-macos-arm64.tar.gz` (Apple silicon) or
+  `obsidian-tui-macos-x86_64.tar.gz` (Intel). If macOS won't open it, clear
+  the download flag: `xattr -d com.apple.quarantine obsidian-tui`
+- **Linux:** `obsidian-tui-linux-x86_64.tar.gz`.
+
+Or build it yourself with Rust (https://rustup.rs):
 
 ```sh
-cargo install --path .
+cargo install --git https://github.com/Robindfuller/obsidian-tui
 ```
-
-or build it and put `target/release/obsidian-tui` (`obsidian-tui.exe` on
-Windows) somewhere on your PATH:
-
-```sh
-cargo build --release
-```
-
-Ready-made binaries for Linux, macOS and Windows are attached to each GitHub
-release (see `.github/workflows/release.yml`: push a `v*` tag to make one).
 
 ## Use
 
@@ -155,3 +159,7 @@ obsidian-tui --dump 150x40 --steps "text:Welcome;key:tab,enter" tests/fixtures/v
 (`key:down,enter`), types (`type:compost`) and clicks (`click:60,4`,
 `text:Garden Plan`) first. The tests run against the made-up vault in
 `tests/fixtures/vault`, copied to a temp folder so nothing real is touched.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).
