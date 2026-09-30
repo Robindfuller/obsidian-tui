@@ -37,6 +37,12 @@ pub enum Act {
     Forward,
     /// edit here, in the built-in editor
     Edit,
+    /// the ask pane
+    Ask,
+    /// pick what answers in the ask pane
+    AskModel,
+    /// start the ask pane's conversation again
+    AskNew,
     /// edit in $VISUAL / $EDITOR
     EditOutside,
     Obsidian,

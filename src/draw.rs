@@ -31,6 +31,7 @@ pub enum Scroll {
     Rail,
     List,
     Note,
+    Ask,
     Menu,
 }
 
@@ -625,6 +626,10 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
         draw_editor(app, p, r);
         return;
     }
+    if app.asking {
+        draw_ask(app, p, r);
+        return;
+    }
     let (ink, faint, dim, line, acc) = (app.t.c("ink"), app.t.c("faint"), app.t.c("dim"), app.t.c("line"), app.t.c("accent"));
     let Some(key) = app.note.clone() else {
         p.frame(r, line, None, None);
@@ -918,6 +923,160 @@ fn draw_graph(app: &mut App, p: &mut P, area: Rect, whole: bool) {
     }
 }
 
+/// The ask pane, in the note's place: the conversation, then the question box.
+fn draw_ask(app: &mut App, p: &mut P, r: Rect) {
+    let (ink, faint, dim, acc, line) = (app.t.c("ink"), app.t.c("faint"), app.t.c("dim"), app.t.c("accent"), app.t.c("line"));
+    let soft = app.t.c("line-soft");
+    let busy = app.chat.busy();
+    let sub = if busy { "esc stop" } else { "enter ask · esc close" };
+    p.frame(r, acc, Some(("Ask your notes", ink, true)), Some((sub, faint)));
+    let inn = Rect::new(r.x + 2, r.y + 1, r.width.saturating_sub(4), r.height.saturating_sub(2));
+    if inn.width < 8 || inn.height < 6 {
+        return;
+    }
+    // the head: what answers (click to change), and a fresh start
+    let mut head: Line = vec![];
+    if app.narrow() {
+        head.push(sp("‹ notes", dim).on(Act::StageBack));
+        head.push(sp("  ·  ", faint));
+    }
+    match &app.ask_model {
+        Some(m) => {
+            head.push(sp("answering: ", faint));
+            head.push(sp(format!("{} ▾", m.label), ink).on(Act::AskModel));
+        }
+        None => head.push(sp("pick what answers ▾", dim).on(Act::AskModel)),
+    }
+    if !app.chat.turns.is_empty() {
+        head.push(sp("  ·  ", faint));
+        head.push(sp("new chat", dim).on(Act::AskNew));
+    }
+    let hl = wrap(&head, inn.width as usize).into_iter().next().unwrap_or_default();
+    p.line(inn.x, inn.y, &hl, inn.right(), p.bg);
+    p.put(inn.x, inn.y + 1, &"─".repeat(inn.width as usize), Style::default().fg(soft).bg(p.bg), inn.right());
+    let body = Rect::new(inn.x, inn.y + 2, inn.width, inn.height.saturating_sub(4));
+    let w = body.width.saturating_sub(2) as usize;
+    let lines = ask_lines(app, w);
+    let h = body.height as usize;
+    let max = lines.len().saturating_sub(h);
+    let top = app.chat.scroll.unwrap_or(max).min(max);
+    app.chat.lines = lines.len();
+    app.chat.rows = h;
+    p.hit(body, HitKind::Blur);
+    p.hit(body, HitKind::Scroll(Scroll::Ask));
+    for (i, l) in lines.iter().enumerate().skip(top).take(h) {
+        p.line(body.x, body.y + (i - top) as u16, l, body.x + w as u16, p.bg);
+    }
+    if lines.len() > h {
+        p.scrollbar(r.right() - 2, body.y, body.height, lines.len(), top, faint, line);
+    }
+    // the question box
+    let by = inn.bottom() - 1;
+    p.put(inn.x, by - 1, &"─".repeat(inn.width as usize), Style::default().fg(soft).bg(p.bg), inn.right());
+    let x = p.put(inn.x, by, "› ", Style::default().fg(acc).bg(p.bg).add_modifier(Modifier::BOLD), inn.right());
+    let ph = if busy { "answering…" } else { "ask about your notes" };
+    input_box(p, &mut app.chat.input, x, by, inn.right().saturating_sub(x), ph, !busy, ink, faint, acc);
+}
+
+/// The conversation as lines `w` wide: each question, its answer (drawn as
+/// Markdown, links clickable) and the notes it looked at.
+fn ask_lines(app: &mut App, w: usize) -> Vec<Line> {
+    let (ink, faint, dim, acc, flame) = (app.t.c("ink"), app.t.c("faint"), app.t.c("dim"), app.t.c("accent"), app.t.c("flame"));
+    let mut out: Vec<Line> = vec![];
+    let para = |out: &mut Vec<Line>, segs: Vec<Seg>| out.extend(wrap(&segs, w));
+    if app.chat.turns.is_empty() {
+        para(&mut out, vec![sp(
+            "Ask a question about the notes in this vault. It finds the notes that match best and answers from them, naming the ones it used.",
+            dim,
+        )]);
+        out.push(vec![]);
+        para(&mut out, vec![sp("Try: “what did I decide about the budget?”, “summarise this note”, “where did I write about compost?”", faint)]);
+        out.push(vec![]);
+        match &app.ask_model {
+            Some(m) if m.local() => para(&mut out, vec![sp("It runs on this computer with Ollama: nothing leaves it.", faint)]),
+            Some(_) => para(&mut out, vec![sp("Your question and the notes that match it go to Claude, on your Claude plan.", faint)]),
+            None => {
+                para(&mut out, vec![sp("Nothing to answer with yet.", flame).b()]);
+                let why = app.ask_why.clone().unwrap_or_default();
+                para(&mut out, vec![sp(
+                    format!("{why} Install Ollama (ollama.com) and run “ollama pull llama3.2”, or install Claude Code to use your Claude plan. Then press ctrl+o."),
+                    dim,
+                )]);
+            }
+        }
+        return out;
+    }
+    let tg = app.theme_gen;
+    let n = app.chat.turns.len();
+    for i in 0..n {
+        if i > 0 {
+            out.push(vec![]);
+        }
+        let t = &app.chat.turns[i];
+        // the question
+        let q = wrap(&[sp(t.q.clone(), ink).b()], w.saturating_sub(2));
+        for (j, l) in q.into_iter().enumerate() {
+            let mut row = vec![if j == 0 { sp("› ", acc).b() } else { plain("  ") }];
+            row.extend(l);
+            out.push(row);
+        }
+        out.push(vec![]);
+        // the answer so far
+        let answer = t.answer();
+        if answer.trim().is_empty() && t.err.is_none() {
+            if !t.done {
+                let frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+                let f = frames[(t.at.elapsed().as_millis() / 100) as usize % frames.len()];
+                let k = t.sources.len();
+                let what = if k == 0 {
+                    "Thinking…".to_string()
+                } else {
+                    format!("Reading {k} note{}…", if k == 1 { "" } else { "s" })
+                };
+                out.push(vec![sp(format!("{f} {what}"), faint)]);
+            }
+        } else if !answer.trim().is_empty() {
+            let fresh = t.cache.as_ref().filter(|c| c.0 == answer.len() && c.1 == w && c.2 == tg).map(|c| c.3.clone());
+            let r = match fresh {
+                Some(r) => r,
+                None => {
+                    let r = std::rc::Rc::new(crate::md::render(&crate::vault::Note::scratch(&answer), &app.vault, &app.t, w, &[]));
+                    app.chat.turns[i].cache = Some((answer.len(), w, tg, r.clone()));
+                    r
+                }
+            };
+            let t = &app.chat.turns[i];
+            let mut ls = r.lines.clone();
+            if !t.done
+                && let Some(last) = ls.last_mut()
+            {
+                last.push(sp("▍", acc));
+            }
+            out.extend(ls);
+        }
+        let t = &app.chat.turns[i];
+        if let Some(e) = &t.err {
+            if !answer.trim().is_empty() {
+                out.push(vec![]);
+            }
+            para(&mut out, vec![sp(e.clone(), flame)]);
+        }
+        // the notes it was given
+        if t.done && !t.sources.is_empty() {
+            out.push(vec![]);
+            let mut segs = vec![sp("Looked at  ", faint)];
+            for (j, (k, name)) in crate::ask::names(&app.vault, &t.sources).into_iter().enumerate() {
+                if j > 0 {
+                    segs.push(sp(" · ", faint));
+                }
+                segs.push(sp(name, dim).on(Act::Open { key: k, heading: None }));
+            }
+            para(&mut out, segs);
+        }
+    }
+    out
+}
+
 /// The built-in editor, in the note's place.
 fn draw_editor(app: &mut App, p: &mut P, r: Rect) {
     use crate::editor::{Tint, ew, tints};
@@ -1148,6 +1307,19 @@ impl App {
             out.extend(n("shift+arrows", "select"));
             return out;
         }
+        if self.asking {
+            let n = |key: &str, what: &str| vec![sp(key, ink), sp(format!(" {what}"), faint), plain("  ")];
+            if self.chat.busy() {
+                out.extend(n("esc", "stop"));
+            } else {
+                out.extend(n("enter", "ask"));
+                out.extend(n("esc", "close"));
+            }
+            out.extend(n("↑↓ pgup pgdn", "scroll"));
+            out.extend(k("^O", "model", Some(Act::AskModel)));
+            out.extend(k("^N", "new chat", Some(Act::AskNew)));
+            return out;
+        }
         if self.focus == Focus::Filter {
             out.extend(k("enter", "search every note", Some(Act::Search)));
             out.extend(k("↑↓", "move", None));
@@ -1213,6 +1385,7 @@ impl App {
         if !self.terms.is_empty() {
             out.extend(k("n", "match", Some(Act::NextHit)));
         }
+        out.extend(k("a", "ask", Some(Act::Ask)));
         out.extend(k("e", "edit", Some(Act::Edit)));
         out.extend(k("E", "$EDITOR", Some(Act::EditOutside)));
         out.extend(k("b", "sidebar", Some(Act::ToggleRail)));

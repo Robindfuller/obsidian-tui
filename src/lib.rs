@@ -3,6 +3,7 @@
 //! every link and tag clickable, and search across the whole vault.
 
 pub mod app;
+pub mod ask;
 pub mod draw;
 pub mod editor;
 pub mod events;

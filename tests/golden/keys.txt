@@ -15,6 +15,7 @@
 │ #pr││                      │ 0                 reset the graph's zoom and pan           │                            │
 │ #re││                      │ space  pgup pgdn  scroll the note                          │                            │
 │ #st││                      │ J K  home end     scroll a line / to the ends              │                            │
+│    ││                      │ a                 ask about your notes (esc closes)        │                            │
 │    ││                      │ e                 edit here (ctrl+s saves, esc done)       │                            │
 │    ││                      │ E                 edit in your own $EDITOR                 │                            │
 │    ││                      │ o                 open in Obsidian                         │                            │
@@ -25,6 +26,5 @@
 │    ││                      │ r                 read the vault again                     │                            │
 │    ││                      │ q                 quit                                     │                            │
 │    ││                      ╰────────────────────────────────────────────────────────────╯                            │
-│    ││                                        ││                                                                      │
 ╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
- ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   E $EDITOR   b sidebar   ? keys   q quit
+ ↑↓ notes   enter open   / search   tab links   [ ] back   a ask   e edit   E $EDITOR   b sidebar   ? keys   q quit

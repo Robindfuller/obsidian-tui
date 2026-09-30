@@ -27,4 +27,4 @@
 │                        ││                                        ││                                                                                │
 │                        ││                                        ││                                                                                │
 ╰────────────────────────╯╰───────────────── 3 notes · best first ─╯╰────────────────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
- ↑↓ notes   enter open   / search   tab links   [ ] back   n match   e edit   E $EDITOR   b sidebar   ? keys   q quit
+ ↑↓ notes   enter open   / search   tab links   [ ] back   n match   a ask   e edit   E $EDITOR   b sidebar   ? keys   q quit

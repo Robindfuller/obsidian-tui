@@ -103,6 +103,18 @@ impl H {
         self.click(x, y)
     }
 
+    /// Let an answer that's on its way arrive.
+    pub fn wait(&mut self) -> String {
+        for _ in 0..500 {
+            self.app.tick();
+            if !self.app.chat.busy() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        self.render()
+    }
+
     /// Run steps like "key:down;type:plan;click:60,4;text:Garden" (for --dump).
     pub fn steps(&mut self, steps: &str) {
         for s in steps.split(';').filter(|s| !s.is_empty()) {
@@ -130,6 +142,8 @@ impl H {
             } else if let Some(xy) = s.strip_prefix("rclick:") {
                 let (x, y) = xy.split_once(',').unwrap();
                 self.rclick(x.parse().unwrap(), y.parse().unwrap());
+            } else if s == "wait" {
+                self.wait();
             } else if let Some(t) = s.strip_prefix("text:") {
                 self.click_text(t);
             }

@@ -9,6 +9,9 @@ just type, ctrl+s to save). `E` hands it to your own `$EDITOR` instead. The
 app writes to your vault only when you save in that editor, and never touches
 Obsidian's own `.obsidian` folder.
 
+Press `a` to ask a question about your notes. A model on your own computer
+(or Claude, if you like) answers from the notes that match, and names them.
+
 Runs on Linux, macOS and Windows (Windows Terminal).
 
 ## Install
@@ -39,6 +42,7 @@ cargo install --git https://github.com/Robindfuller/obsidian-tui
 obsidian-tui ~/Documents/MyVault
 obsidian-tui "C:\Users\me\Documents\My Vault"
 obsidian-tui            # the current folder
+obsidian-tui --ask "what's the garden budget?" ~/Documents/MyVault
 ```
 
 What's on screen:
@@ -85,6 +89,43 @@ wins when two share a name), then an alias from frontmatter.
 
 The vault is watched: notes you add, change or delete elsewhere show up at
 once.
+
+## Ask
+
+Press `a` to ask a question about your notes, in plain words: "what did I
+decide about the budget?", "summarise this note", "where did I write about
+compost?". It finds the notes that match best, sends them with the question
+to a language model, and the answer streams in beside your notes. The notes
+it names are links: click one to open it. Under each answer, "Looked at"
+lists the notes it was given. Ask a follow-up and it remembers the
+conversation; `a` brings it back after you've gone to a note.
+
+What answers (click the name at the top, or ctrl+o, to change it):
+
+- **A model on your own computer**, through [Ollama](https://ollama.com).
+  Nothing leaves your machine. Install Ollama and pull a model, for example
+  `ollama pull llama3.2` (small and quick) or `ollama pull qwen3.5:9b`
+  (better answers, slower). It uses the biggest one you have unless you pick
+  another. If Ollama isn't on this computer, set `OLLAMA_HOST`.
+- **Claude**, on your Claude plan, if [Claude Code](https://claude.com/claude-code)
+  is installed and logged in. The question and the matching notes go to
+  Claude; nothing else does, and it can't touch your files.
+
+Finding the notes is plain word matching (no index to build, nothing
+stored): rare words count for more, and titles count most. "This note" means
+the one on screen. It never writes to the vault.
+
+| Key | Does |
+| --- | --- |
+| type, enter | ask |
+| ↑ ↓, pgup, pgdn, the wheel | scroll the conversation |
+| esc | stop the answer, or close the pane |
+| ctrl+o | pick what answers |
+| ctrl+n | start a new conversation |
+
+From the command line, `obsidian-tui --ask "question" VAULT` prints the
+answer (and the notes it used) and exits; `--model llama3.2:3b` or
+`--model haiku` picks the model.
 
 ## Editing
 
@@ -133,6 +174,7 @@ theirs, or keep editing. Files that aren't UTF-8 text are left alone: use `E`.
 | + -, 0 | in a graph: more or fewer links (zoom in the vault's), reset the view |
 | space, pgup, pgdn, ctrl+d, ctrl+u | scroll the note |
 | J K, home, end | scroll a line, or to the top or bottom |
+| a | ask a question about your notes (see Ask) |
 | e | edit the note here (see Editing) |
 | E | edit in `$VISUAL` / `$EDITOR` (notepad on Windows, else nano or vi) |
 | o | open the note in the Obsidian app |
@@ -166,13 +208,13 @@ Terminal, iTerm2, kitty, WezTerm, foot, ghostty, alacritty, GNOME Terminal
 and so on.
 
 It remembers the sidebar, sort, list width, open folders and the last note per
-vault in `~/.config/obsidian-tui/state.json` (`%APPDATA%\obsidian-tui` on
-Windows).
+vault, and the model you ask, in `~/.config/obsidian-tui/state.json`
+(`%APPDATA%\obsidian-tui` on Windows).
 
 ## Develop
 
 ```sh
-cargo test                     # screens, clicks, links, search, watching, editing
+cargo test                     # screens, clicks, links, search, watching, editing, asking
 cargo clippy --all-targets
 UPDATE_GOLDEN=1 cargo test     # rewrite the saved screens in tests/golden
 obsidian-tui --dump 150x40 --steps "text:Welcome;key:tab,enter" tests/fixtures/vault

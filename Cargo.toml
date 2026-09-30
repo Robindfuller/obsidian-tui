@@ -21,6 +21,7 @@ regex = "1"
 percent-encoding = "2"
 serde_json = "1"
 arboard = { version = "3", default-features = false, features = ["wayland-data-control"] }
+ureq = { version = "3", default-features = false }
 
 [profile.release]
 opt-level = 3

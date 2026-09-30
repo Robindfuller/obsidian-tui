@@ -27,4 +27,4 @@
 │    ││                                        ││                                                                      │
 │    ││                                        ││                                                                      │
 ╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
- ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   E $EDITOR   b sidebar   ? keys   q quit
+ ↑↓ notes   enter open   / search   tab links   [ ] back   a ask   e edit   E $EDITOR   b sidebar   ? keys   q quit

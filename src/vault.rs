@@ -53,6 +53,12 @@ impl Note {
         self.body().lines().nth(n).unwrap_or("")
     }
 
+    /// Text that isn't a file in the vault (an answer about it), read like a
+    /// note at the vault's root so it can be drawn like one.
+    pub fn scratch(text: &str) -> Note {
+        parse_note(Path::new(""), Path::new("answer.md"), text.to_string(), SystemTime::UNIX_EPOCH, 0)
+    }
+
     pub fn has_tag(&self, tag: &str) -> bool {
         let t = tag.to_lowercase();
         self.tags.iter().any(|x| {

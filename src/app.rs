@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{Value, json};
 
+use crate::ask::{Chat, Model};
 use crate::draw::Hit;
 use crate::editor::{Clip, Editor, Out, Saved};
 use crate::graph::{Graph, View, Xform};
@@ -91,7 +92,7 @@ pub struct App {
     pub vault: Vault,
     pub t: Theme,
     theme_stamp: Vec<u128>,
-    theme_gen: u64,
+    pub(crate) theme_gen: u64,
     theme_at: Instant,
     pub size: (u16, u16),
     /// the sidebar entry being shown: "all", "recent", "search", "folder:..", "tag:.."
@@ -168,6 +169,17 @@ pub struct App {
     pub clip: Clip,
     /// where the editor's text was drawn, for the mouse
     pub edit_area: ratatui::layout::Rect,
+    /// the ask pane is showing, in the note's place
+    pub asking: bool,
+    pub chat: Chat,
+    /// what answers: picked in the pane, remembered as "ask_model"
+    pub ask_model: Option<Model>,
+    ask_saved: Option<String>,
+    ask_models_cache: Vec<Model>,
+    /// why there's no local model, when there isn't one
+    pub ask_why: Option<String>,
+    /// the pane a narrow window showed before asking
+    ask_from: Stage,
     watch_rx: Option<Receiver<()>>,
     _watcher: Option<notify::RecommendedWatcher>,
     rescan_at: Option<Instant>,
@@ -196,6 +208,12 @@ pub fn state_file() -> PathBuf {
         std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).unwrap_or_else(|| util::home().join(".config"))
     };
     base.join("obsidian-tui").join("state.json")
+}
+
+/// The model picked in the ask pane last time, if any.
+pub fn saved_model() -> Option<String> {
+    let st: Value = std::fs::read_to_string(state_file()).ok().and_then(|s| serde_json::from_str(&s).ok())?;
+    st["ask_model"].as_str().map(str::to_string)
 }
 
 fn slug(s: &str) -> String {
@@ -274,6 +292,13 @@ impl App {
             editor: None,
             clip: Clip::default(),
             edit_area: ratatui::layout::Rect::default(),
+            asking: false,
+            chat: Chat::default(),
+            ask_model: None,
+            ask_saved: None,
+            ask_models_cache: vec![],
+            ask_why: None,
+            ask_from: Stage::List,
             watch_rx: None,
             _watcher: None,
             rescan_at: None,
@@ -296,6 +321,7 @@ impl App {
         self.rail_collapsed = st["rail_collapsed"].as_bool().unwrap_or(false);
         self.sort_mod = st["sort_mod"].as_bool().unwrap_or(false);
         self.list_w = st["list_w"].as_u64().map(|v| v as u16).unwrap_or(42);
+        self.ask_saved = st["ask_model"].as_str().map(str::to_string);
         let v = &st["vaults"][self.vault_id()];
         if let Some(open) = v["open"].as_array() {
             self.open_folders = open.iter().filter_map(|x| x.as_str().map(str::to_string)).collect();
@@ -330,6 +356,11 @@ impl App {
         st["rail_collapsed"] = json!(self.rail_collapsed);
         st["sort_mod"] = json!(self.sort_mod);
         st["list_w"] = json!(self.list_w);
+        if let Some(m) = self.ask_model.as_ref().map(|m| m.id.clone()).or(self.ask_saved.clone())
+            && m != "fake"
+        {
+            st["ask_model"] = json!(m);
+        }
         if !st["vaults"].is_object() {
             st["vaults"] = json!({});
         }
@@ -385,6 +416,10 @@ impl App {
 
     /// Timers: toasts, theme switches, vault changes.
     pub fn tick(&mut self) {
+        // an answer arriving, or the spinner while it's on its way
+        if self.chat.poll() || self.chat.busy() {
+            self.dirty = true;
+        }
         let before = self.toasts.len();
         self.toasts.retain(|t| t.at.elapsed() < Duration::from_secs(if t.sev == Sev::Error { 6 } else { 4 }));
         if self.toasts.len() != before {
@@ -592,6 +627,7 @@ impl App {
         }
         let same = self.note.as_deref() == Some(key);
         self.note = Some(key.to_string());
+        self.asking = false;
         if !same || nav != Nav::List {
             self.note_scroll = 0;
             self.link_sel = None;
@@ -1380,6 +1416,9 @@ impl App {
             Act::StageBack => self.stage_back(),
             Act::Forward => self.forward(),
             Act::Edit => self.open_editor(None),
+            Act::Ask => self.open_ask(),
+            Act::AskModel => self.model_menu(),
+            Act::AskNew => self.new_chat(),
             Act::EditOutside => self.edit(None),
             Act::Obsidian => {
                 if let Some(k) = self.note.clone() {
@@ -1412,6 +1451,171 @@ impl App {
             Act::Help => self.help(),
             Act::Quit => self.quit = true,
             Act::MenuPick(_) | Act::Toast(_) => {}
+        }
+    }
+
+    // ------------------------------------------------------------ asking
+    /// Open the ask pane in the note's place, working out the model the
+    /// first time.
+    pub fn open_ask(&mut self) {
+        if self.editor.is_some() {
+            return;
+        }
+        if self.view == "graph" {
+            let prev = self.graph_prev.clone();
+            self.set_view(&prev);
+        }
+        if self.ask_model.is_none() {
+            self.find_model();
+        }
+        if !self.asking {
+            self.ask_from = self.shown();
+        }
+        self.asking = true;
+        self.stage = Stage::Note;
+        self.focus = Focus::None;
+        self.link_sel = None;
+        self.dirty = true;
+    }
+
+    /// The remembered model if it's still there, else the biggest local
+    /// one, else Claude.
+    fn find_model(&mut self) {
+        if self.headless {
+            self.ask_model = Some(crate::ask::fake_model());
+            return;
+        }
+        let (models, why) = crate::ask::all_models();
+        self.ask_why = why;
+        let saved = self.ask_saved.as_ref().and_then(|s| models.iter().find(|m| &m.id == s)).cloned();
+        self.ask_model = saved.or_else(|| models.first().cloned());
+    }
+
+    pub fn close_ask(&mut self) {
+        self.asking = false;
+        self.stage = self.ask_from;
+        self.dirty = true;
+    }
+
+    pub fn ask_send(&mut self) {
+        if self.chat.input.value().trim().is_empty() {
+            return;
+        }
+        let Some(m) = self.ask_model.clone() else {
+            self.find_model();
+            if self.ask_model.is_none() {
+                self.toast("Nothing to ask", "Start Ollama, or install Claude Code, then try again.", Sev::Error);
+            }
+            return;
+        };
+        let open = self.note.clone();
+        self.chat.ask(&self.vault, open.as_deref(), &m);
+        self.dirty = true;
+    }
+
+    /// A key while the ask pane is open: typing goes to the question.
+    pub fn ask_key(&mut self, k: &ratatui::crossterm::event::KeyEvent) {
+        use ratatui::crossterm::event::{KeyCode, KeyModifiers};
+        let ctrl = k.modifiers.contains(KeyModifiers::CONTROL);
+        let page = self.chat.rows.saturating_sub(2).max(1) as i64;
+        match k.code {
+            KeyCode::Char('c') if ctrl => {
+                if self.chat.busy() {
+                    self.chat.stop();
+                } else {
+                    self.quit = true;
+                }
+            }
+            KeyCode::Char('o') if ctrl => self.model_menu(),
+            KeyCode::Char('n') if ctrl => self.new_chat(),
+            KeyCode::Esc => {
+                if self.chat.busy() {
+                    self.chat.stop();
+                } else {
+                    self.close_ask();
+                }
+            }
+            KeyCode::Enter => self.ask_send(),
+            KeyCode::Up => self.chat_scroll(-1),
+            KeyCode::Down => self.chat_scroll(1),
+            KeyCode::PageUp => self.chat_scroll(-page),
+            KeyCode::PageDown => self.chat_scroll(page),
+            _ => {
+                self.chat.input.key(k);
+            }
+        }
+        self.dirty = true;
+    }
+
+    pub fn new_chat(&mut self) {
+        self.chat.stop();
+        self.chat.turns.clear();
+        self.chat.scroll = None;
+        self.dirty = true;
+    }
+
+    /// Scroll the answers; back at the end, it follows new text again.
+    pub fn chat_scroll(&mut self, d: i64) {
+        let max = self.chat.lines.saturating_sub(self.chat.rows);
+        let top = self.chat.scroll.unwrap_or(max) as i64 + d;
+        let top = top.clamp(0, max as i64) as usize;
+        self.chat.scroll = if top >= max { None } else { Some(top) };
+        self.dirty = true;
+    }
+
+    pub fn model_menu(&mut self) {
+        if !self.headless {
+            let (models, why) = crate::ask::all_models();
+            self.ask_why = why;
+            self.show_models(models);
+        } else {
+            self.show_models(vec![crate::ask::fake_model()]);
+        }
+    }
+
+    fn show_models(&mut self, models: Vec<Model>) {
+        let (ink, faint, acc) = (self.t.c("ink"), self.t.c("faint"), self.t.c("accent"));
+        let cur = self.ask_model.as_ref().map(|m| m.id.clone());
+        let lw = models.iter().map(|m| util::cell_len(&m.label)).max().unwrap_or(10) + 2;
+        let mut opts: Vec<Option<(String, Line)>> = models
+            .iter()
+            .map(|m| {
+                let on = cur.as_deref() == Some(m.id.as_str());
+                Some((
+                    m.id.clone(),
+                    vec![sp(if on { "● " } else { "  " }, acc), sp(util::fit(&m.label, lw), ink), sp(m.hint.clone(), faint)],
+                ))
+            })
+            .collect();
+        if let Some(why) = &self.ask_why {
+            if !opts.is_empty() {
+                opts.push(None);
+            }
+            opts.push(Some(("-none".into(), vec![sp(why.clone(), faint)])));
+        }
+        if opts.is_empty() {
+            opts.push(Some(("-none".into(), vec![sp("Nothing to ask: start Ollama or install Claude Code.", faint)])));
+        }
+        let hi = models.iter().position(|m| cur.as_deref() == Some(m.id.as_str())).or(if models.is_empty() { None } else { Some(0) });
+        let (w, h) = self.size;
+        self.modals.push(Modal {
+            title: "Answer with".into(),
+            opts,
+            x: (w as i32 - 60) / 2,
+            y: (h as i32 - 10) / 2,
+            hi,
+            top: 0,
+            ctx: "ask:model".into(),
+        });
+        self.ask_models_cache = models;
+        self.dirty = true;
+    }
+
+    fn pick_model(&mut self, id: &str) {
+        if let Some(m) = self.ask_models_cache.iter().find(|m| m.id == id).cloned() {
+            self.ask_saved = Some(m.id.clone());
+            self.ask_model = Some(m);
+            self.save_state();
         }
     }
 
@@ -1457,6 +1661,7 @@ impl App {
             ("0", "reset the graph's zoom and pan"),
             ("space  pgup pgdn", "scroll the note"),
             ("J K  home end", "scroll a line / to the ends"),
+            ("a", "ask about your notes (esc closes)"),
             ("e", "edit here (ctrl+s saves, esc done)"),
             ("E", "edit in your own $EDITOR"),
             ("o", "open in Obsidian"),
@@ -1489,6 +1694,10 @@ impl App {
         let ctx = m.ctx;
         if let Some(what) = ctx.strip_prefix("editor:") {
             self.editor_answer(what, &k);
+            return;
+        }
+        if ctx == "ask:model" {
+            self.pick_model(&k);
             return;
         }
         if !ctx.is_empty() && self.note.as_deref() != Some(ctx.as_str()) {
@@ -1546,7 +1755,7 @@ impl App {
     /// Which pane a narrow window shows now (a note stage needs a note).
     pub fn shown(&self) -> Stage {
         match self.stage {
-            Stage::Note if self.note.is_none() && self.editor.is_none() => Stage::List,
+            Stage::Note if self.note.is_none() && self.editor.is_none() && !self.asking => Stage::List,
             s => s,
         }
     }

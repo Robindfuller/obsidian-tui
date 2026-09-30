@@ -28,6 +28,11 @@ impl App {
             }
             return;
         }
+        // so does the ask pane: typing is the question
+        if self.asking && self.modals.is_empty() {
+            self.ask_key(&k);
+            return;
+        }
         let ctrl = k.modifiers.contains(KeyModifiers::CONTROL);
         let alt = k.modifiers.contains(KeyModifiers::ALT);
         if ctrl && matches!(k.code, KeyCode::Char('c') | KeyCode::Char('q')) {
@@ -148,6 +153,7 @@ impl App {
             KeyCode::Char('K') => self.scroll_note(-1),
             KeyCode::Home => self.note_scroll = 0,
             KeyCode::End => self.note_scroll = usize::MAX / 2,
+            KeyCode::Char('a') if !ctrl => self.open_ask(),
             KeyCode::Char('e') => self.open_editor(None),
             KeyCode::Char('E') => self.edit(None),
             KeyCode::Char('o') => self.run(&Act::Obsidian),
@@ -275,6 +281,11 @@ impl App {
                 Some(f) => f.insert(s.lines().next().unwrap_or("")),
                 None => ed.insert(s),
             }
+            return;
+        }
+        if self.asking {
+            // a pasted paragraph becomes one line of question
+            self.chat.input.insert(&s.split_whitespace().collect::<Vec<_>>().join(" "));
             return;
         }
         if self.focus == Focus::Filter {
@@ -418,6 +429,7 @@ impl App {
                 Scroll::Rail => bump(&mut self.rail_scroll),
                 Scroll::List => bump(&mut self.list_scroll),
                 Scroll::Note => bump(&mut self.note_scroll),
+                Scroll::Ask => self.chat_scroll(d),
                 Scroll::Menu => {}
             },
             _ => {}

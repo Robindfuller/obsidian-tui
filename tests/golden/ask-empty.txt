@@ -1,0 +1,30 @@
+╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ Ask your notes ───────────────────────────────────────────────────────────────╮
+│ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ answering: test model ▾                                                        │
+│▌All notes             8││────────────────────────────────────────││ ────────────────────────────────────────────────────────────────────────────── │
+│ Recent                8││ 2026-09-28  Daily                   9d ││ Ask a question about the notes in this vault. It finds the notes that match    │
+│ Graph                 8││ 2026-09-29  Daily                   8d ││ best and answers from them, naming the ones it used.                           │
+│ FOLDERS                ││ Books to read  Reading              3d ││                                                                                │
+│   Daily               2││▌Garden Plan  Projects               6d ││ Try: “what did I decide about the budget?”, “summarise this note”, “where      │
+│ ▸ Projects            3││ Ideas                               7d ││ did I write about compost?”                                                    │
+│   Reading             1││ Ideas  Projects                     5d ││                                                                                │
+│ TAGS                   ││ Shelves  Projects/Kitchen           4d ││ It runs on this computer with Ollama: nothing leaves it.                       │
+│ #garden               2││ Welcome                             2d ││                                                                                │
+│ #guide                1││                                        ││                                                                                │
+│ #inbox                1││                                        ││                                                                                │
+│ #journal              2││                                        ││                                                                                │
+│ #projects/garden      2││                                        ││                                                                                │
+│ #reading              1││                                        ││                                                                                │
+│ #start                1││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ ────────────────────────────────────────────────────────────────────────────── │
+│                        ││                                        ││ › ask about your notes                                                         │
+╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────────────────────────── enter ask · esc close ─╯
+ enter ask  esc close  ↑↓ pgup pgdn scroll  ^O model   ^N new chat
