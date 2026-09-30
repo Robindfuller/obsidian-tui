@@ -9,6 +9,10 @@ use crate::draw::{HitKind, Scroll};
 use crate::input::Ed;
 use crate::rich::Act;
 
+fn modal_open(app: &App) -> bool {
+    !app.modals.is_empty()
+}
+
 impl App {
     pub fn on_key(&mut self, k: KeyEvent) {
         if k.kind == KeyEventKind::Release {
@@ -70,6 +74,9 @@ impl App {
             }
             return;
         }
+        if self.graph_key(&k) {
+            return;
+        }
         if self.narrow() && self.narrow_key(&k) {
             return;
         }
@@ -125,7 +132,14 @@ impl App {
             KeyCode::Char('f') if ctrl => self.focus_filter(),
             KeyCode::Char('n') => self.next_hit(1),
             KeyCode::Char('N') => self.next_hit(-1),
-            KeyCode::Char(c @ '1'..='3') => self.run(&Act::Tab(c as usize - '1' as usize)),
+            KeyCode::Char(c @ '1'..='4') => self.run(&Act::Tab(c as usize - '1' as usize)),
+            KeyCode::Char('g') => {
+                if self.note.is_some() {
+                    let t = if self.tab == 3 { 0 } else { 3 };
+                    self.run(&Act::Tab(t));
+                    self.stage = crate::app::Stage::Note;
+                }
+            }
             KeyCode::PageDown | KeyCode::Char(' ') => self.scroll_note(self.note_h.saturating_sub(2).max(1) as i64),
             KeyCode::PageUp => self.scroll_note(-(self.note_h.saturating_sub(2).max(1) as i64)),
             KeyCode::Char('d') if ctrl => self.scroll_note((self.note_h / 2).max(1) as i64),
@@ -297,6 +311,18 @@ impl App {
             self.dirty = true;
             return;
         }
+        if let Some((px, py)) = self.graph_drag {
+            match m.kind {
+                MouseEventKind::Drag(_) => {
+                    self.graph_pan(x as f64 - px as f64, y as f64 - py as f64);
+                    self.graph_drag = Some((x, y));
+                }
+                MouseEventKind::Up(_) => self.graph_drag = None,
+                _ => {}
+            }
+            self.mouse = Some((x, y));
+            return;
+        }
         if self.editor.is_some() && self.modals.is_empty() && self.editor_mouse(&m) {
             return;
         }
@@ -378,10 +404,11 @@ impl App {
             .hits
             .iter()
             .rev()
-            .find(|h| h.r.contains((x, y).into()) && matches!(h.k, HitKind::Scroll(_) | HitKind::Backdrop))
+            .find(|h| h.r.contains((x, y).into()) && matches!(h.k, HitKind::Scroll(_) | HitKind::Backdrop | HitKind::Graph))
             .map(|h| h.k.clone());
         let bump = |v: &mut usize| *v = (*v as i64 + d).max(0) as usize;
         match target {
+            Some(HitKind::Graph) if !modal_open(self) => self.graph_zoom(Some((x, y)), if d > 0 { 0.8 } else { 1.25 }),
             Some(HitKind::Scroll(Scroll::Menu)) => {
                 if let Some(m) = self.modals.last_mut() {
                     bump(&mut m.top);
@@ -442,6 +469,7 @@ impl App {
                     self.row_menu(&key, x as i32, y as i32);
                 }
             }
+            HitKind::Graph => self.graph_drag = Some((x, y)),
             HitKind::Scroll(_) => {}
         }
     }

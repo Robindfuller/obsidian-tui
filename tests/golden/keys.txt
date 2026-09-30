@@ -1,19 +1,21 @@
 ╭────╮╭─ All notes ────────────────────────────╮╭─ 2026-09-28 ─────────────────────────────────────────────────────────╮
 │ »  ││ ⌕ filter · enter to search all  ↕ name ││ Daily  ·  edited 9d ago                                              │
 │▌All││────────────────────────────────────────││                                                                      │
-│ Rec││▌2026-09-28  Daily                   9d ││  Note   Links 0   Outline 1                                          │
-│    ││ 2026-09-29  Daily    ╭─ Keys ─────────────────────────────────────────────────────╮─────────────────────────── │
-│ Dai││ Books to read  Readin│ ↑ ↓  j k          move through the notes                   │                            │
-│ Pro││ Garden Plan  Projects│ enter             open the note (or the chosen link)       │                            │
-│ Rea││ Ideas                │ tab  shift+tab    step through links in the note           │──────────────────────────  │
-│    ││ Ideas  Projects      │ /                 filter titles; enter searches every note │                            │
-│ #ga││ Shelves  Projects/Kit│ n  N              next / previous search match             │n Plan. #journal            │
-│ #gu││ Welcome              │ [  ]  alt+← →     back / forward                           │                            │
-│ #in││                      │ ← h               move to the sidebar (→ to come back)     │                            │
-│ #jo││                      │ 1 2 3             note, links, outline                     │                            │
-│ #pr││                      │ space  pgup pgdn  scroll the note                          │                            │
-│ #re││                      │ J K  home end     scroll a line / to the ends              │                            │
-│ #st││                      │ e                 edit here (ctrl+s saves, esc done)       │                            │
+│ Rec││▌2026-09-28  Daily                   9d ││  Note   Links 0   Outline 1   Graph                                  │
+│ Gr…││ 2026-09-29  Daily    ╭─ Keys ─────────────────────────────────────────────────────╮─────────────────────────── │
+│    ││ Books to read  Readin│ ↑ ↓  j k          move through the notes                   │                            │
+│ Dai││ Garden Plan  Projects│ enter             open the note (or the chosen link)       │                            │
+│ Pro││ Ideas                │ tab  shift+tab    step through links in the note           │──────────────────────────  │
+│ Rea││ Ideas  Projects      │ /                 filter titles; enter searches every note │                            │
+│    ││ Shelves  Projects/Kit│ n  N              next / previous search match             │n Plan. #journal            │
+│ #ga││ Welcome              │ [  ]  alt+← →     back / forward                           │                            │
+│ #gu││                      │ ← h               move to the sidebar (→ to come back)     │                            │
+│ #in││                      │ 1 2 3 4           note, links, outline, graph              │                            │
+│ #jo││                      │ g                 the note's graph (+ − for more hops)     │                            │
+│ #pr││                      │ 0                 reset the graph's zoom and pan           │                            │
+│ #re││                      │ space  pgup pgdn  scroll the note                          │                            │
+│ #st││                      │ J K  home end     scroll a line / to the ends              │                            │
+│    ││                      │ e                 edit here (ctrl+s saves, esc done)       │                            │
 │    ││                      │ E                 edit in your own $EDITOR                 │                            │
 │    ││                      │ o                 open in Obsidian                         │                            │
 │    ││                      │ y  Y              copy [[link]] / path                     │                            │
@@ -23,8 +25,6 @@
 │    ││                      │ r                 read the vault again                     │                            │
 │    ││                      │ q                 quit                                     │                            │
 │    ││                      ╰────────────────────────────────────────────────────────────╯                            │
-│    ││                                        ││                                                                      │
-│    ││                                        ││                                                                      │
 │    ││                                        ││                                                                      │
 ╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
  ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   E $EDITOR   b sidebar   ? keys   q quit

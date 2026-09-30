@@ -27,6 +27,11 @@ pub enum Act {
     /// jump to a line of the open note (the outline)
     Line(usize),
     Back,
+    /// a dot in a graph: a note key, or "?name" for a missing note
+    GraphNode(String),
+    /// a local graph one hop deeper (1) or shallower (-1)
+    Depth(i64),
+    GraphReset,
     /// a narrow window's step back
     StageBack,
     Forward,

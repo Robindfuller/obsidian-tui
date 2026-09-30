@@ -1,20 +1,20 @@
 ╭────╮╭─ All notes ────────────────────────────╮╭─ Garden Plan ────────────────────────────────────────────────────────╮
 │ »  ││ ⌕ filter · enter to search all  ↕ name ││ Projects  ·  edited 6d ago                                           │
 │▌All││────────────────────────────────────────││                                                                      │
-│ Rec││ 2026-09-28  Daily                   9d ││  Note   Links 3   Outline 3                                          │
-│    ││ 2026-09-29  Daily                   8d ││ ━━━━━━────────────────────────────────────────────────────────────── │
-│ Dai││ Books to read  Reading              3d ││                                                                      │
-│ Pro││▌╭─ Garden Plan ───────────────╮     6d ││ tags    #garden #projects/garden                                     │
-│ Rea││ │ Open                  enter │     7d ││ status  active                                                       │
-│    ││ │ Edit here                 e │     5d ││ ────────────────────────────────────────                             │
-│ #ga││ │ Edit in your own edit…    E │     4d ││                                                                      │
-│ #gu││ │ Open in Obsidian          o │     2d ││ Garden Plan                                                          │
-│ #in││ │─────────────────────────────│        ││ ───────────────────────────────────────────────────────────────────  │
-│ #jo││ │ Copy [[link]]             y │        ││                                                                      │
-│ #pr││ │ Copy path                 Y │        ││ The plan for the spring. Back to Welcome.                            │
-│ #re││ │ Show its folder             │        ││                                                                      │
-│ #st││ ╰─────────────────────────────╯        ││ Beds                                                                 │
-│    ││                                        ││                                                                      │
+│ Rec││ 2026-09-28  Daily                   9d ││  Note   Links 3   Outline 3   Graph                                  │
+│ Gr…││ 2026-09-29  Daily                   8d ││ ━━━━━━────────────────────────────────────────────────────────────── │
+│    ││ Books to read  Reading              3d ││                                                                      │
+│ Dai││▌╭─ Garden Plan ───────────────╮     6d ││ tags    #garden #projects/garden                                     │
+│ Pro││ │ Open                  enter │     7d ││ status  active                                                       │
+│ Rea││ │ Edit here                 e │     5d ││ ────────────────────────────────────────                             │
+│    ││ │ Edit in your own edit…    E │     4d ││                                                                      │
+│ #ga││ │ Open in Obsidian          o │     2d ││ Garden Plan                                                          │
+│ #gu││ │─────────────────────────────│        ││ ───────────────────────────────────────────────────────────────────  │
+│ #in││ │ Copy [[link]]             y │        ││                                                                      │
+│ #jo││ │ Copy path                 Y │        ││ The plan for the spring. Back to Welcome.                            │
+│ #pr││ │ Show its folder             │        ││                                                                      │
+│ #re││ ╰─────────────────────────────╯        ││ Beds                                                                 │
+│ #st││                                        ││                                                                      │
 │    ││                                        ││ Four raised beds along the fence. Compost first, then seeds.         │
 │    ││                                        ││                                                                      │
 │    ││                                        ││ Budget                                                               │

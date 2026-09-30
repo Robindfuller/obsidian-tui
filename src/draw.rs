@@ -19,6 +19,8 @@ pub enum HitKind {
     Rail(String, Option<u16>),
     FilterBox,
     Scroll(Scroll),
+    /// a graph's empty space: the wheel zooms, a drag pans
+    Graph,
     /// clicking here takes focus away from the filter and the sidebar
     Blur,
     Backdrop,
@@ -42,6 +44,8 @@ pub struct Geo {
     pub rail: Rect,
     pub list: Option<Rect>,
     pub note: Option<Rect>,
+    /// the whole vault's graph, in place of the list and the note
+    pub graph: Option<Rect>,
     pub keybar: Rect,
 }
 
@@ -56,20 +60,26 @@ impl App {
         if self.narrow() {
             // one pane at a time, the whole width
             let full = Rect::new(0, 0, w, main_h);
-            let (rail, list, note) = match self.shown() {
-                Stage::Rail => (full, None, None),
-                Stage::List => (Rect::new(0, 0, 0, main_h), Some(full), None),
-                Stage::Note => (Rect::new(0, 0, 0, main_h), None, Some(full)),
+            let none = Rect::new(0, 0, 0, main_h);
+            let (rail, list, note, graph) = match self.shown() {
+                Stage::Rail => (full, None, None, None),
+                Stage::List if self.view == "graph" => (none, None, None, Some(full)),
+                Stage::List => (none, Some(full), None, None),
+                Stage::Note => (none, None, Some(full), None),
             };
-            return Geo { rail, list, note, keybar: Rect::new(0, main_h, w, 1) };
+            return Geo { rail, list, note, graph, keybar: Rect::new(0, main_h, w, 1) };
         }
         let rail_w = if self.rail_collapsed { 6 } else { 26 };
         let rest = w.saturating_sub(rail_w);
+        if self.view == "graph" {
+            let graph = Some(Rect::new(rail_w, 0, rest, main_h));
+            return Geo { rail: Rect::new(0, 0, rail_w, main_h), list: None, note: None, graph, keybar: Rect::new(0, main_h, w, 1) };
+        }
         let (list, note) = {
             let lw = self.list_w.clamp(28, rest.saturating_sub(40).max(28));
             (Some(Rect::new(rail_w, 0, lw, main_h)), Some(Rect::new(rail_w + lw, 0, rest - lw, main_h)))
         };
-        Geo { rail: Rect::new(0, 0, rail_w, main_h), list, note, keybar: Rect::new(0, main_h, w, 1) }
+        Geo { rail: Rect::new(0, 0, rail_w, main_h), list, note, graph: None, keybar: Rect::new(0, main_h, w, 1) }
     }
 
     /// The rows area of the list.
@@ -274,6 +284,17 @@ pub fn draw(app: &mut App, buf: &mut Buffer) {
     }
     if let Some(n) = g.note {
         draw_note(app, &mut p, n);
+    }
+    if let Some(gr) = g.graph {
+        let n = app.vault.notes.len();
+        let (line, ink, faint) = (app.t.c("line"), app.t.c("ink"), app.t.c("faint"));
+        let sub = format!("{n} note{} · wheel zooms · drag pans · 0 resets", if n == 1 { "" } else { "s" });
+        let title = if app.narrow() { "‹ Graph" } else { "Graph" };
+        p.frame(gr, line, Some((title, ink, true)), Some((&sub, faint)));
+        if app.narrow() {
+            p.hit(Rect::new(gr.x + 2, gr.y, 10, 1), HitKind::Act(Act::StageBack));
+        }
+        draw_graph(app, &mut p, inner(gr), true);
     }
     let kb = app.keybar();
     let kb = wrap(&kb, g.keybar.width as usize).into_iter().next().unwrap_or_default();
@@ -657,6 +678,7 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
         ("Note".to_string(), 0usize),
         (format!("Links {back_n}"), 1),
         (format!("Outline {heads_n}"), 2),
+        ("Graph".to_string(), 3),
     ];
     let ty = inn.y + 2;
     let mut x = inn.x;
@@ -680,6 +702,25 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
     }
     // the body
     let body = Rect::new(inn.x, ty + 3, inn.width, inn.bottom().saturating_sub(ty + 3));
+    if app.tab == 3 {
+        let hint = format!("depth {} · + more · − fewer · 0 reset", app.graph_depth);
+        let hw = crate::util::cell_len(&hint) as u16;
+        if body.height > 3 {
+            draw_graph(app, p, Rect::new(body.x, body.y, body.width, body.height - 1), false);
+            let hy = body.bottom() - 1;
+            let segs = vec![
+                sp(format!("depth {}", app.graph_depth), faint),
+                sp(" · ", faint),
+                sp("+ more", dim).on(Act::Depth(1)),
+                sp(" · ", faint),
+                sp("− fewer", dim).on(Act::Depth(-1)),
+                sp(" · ", faint),
+                sp("0 reset", dim).on(Act::GraphReset),
+            ];
+            p.line(body.right().saturating_sub(hw), hy, &segs, body.right(), p.bg);
+        }
+        return;
+    }
     app.note_h = body.height as usize;
     let w = bw;
     app.apply_scroll_to(w);
@@ -699,6 +740,181 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
     p.chosen = None;
     if lines.len() > h {
         p.scrollbar(r.right() - 2, body.y, body.height, lines.len(), app.note_scroll, faint, line);
+    }
+}
+
+/// A graph in `area`: the open note's (`whole` false) or the vault's.
+/// Lines are braille on a Canvas; dots and labels are drawn over them, and
+/// every dot and label clicks through to its note.
+fn draw_graph(app: &mut App, p: &mut P, area: Rect, whole: bool) {
+    use crate::graph::{ASPECT, Xform};
+    use ratatui::symbols::Marker;
+    use ratatui::widgets::Widget;
+    use ratatui::widgets::canvas::{Canvas, Line as CLine};
+    if area.width < 6 || area.height < 3 {
+        return;
+    }
+    let g = if whole {
+        app.vault_graph()
+    } else {
+        match app.local_graph() {
+            Some(g) => g,
+            None => return,
+        }
+    };
+    let view = if whole { app.gview_vault } else { app.gview_local };
+    let (w, h) = (area.width as f64, area.height as f64);
+    // fit it all in, leaving room for labels; a local graph keeps its note
+    // in the middle
+    let (x0, y0, x1, y1) = g.bounds();
+    let (fcx, fcy, bw, bh) = if whole {
+        ((x0 + x1) / 2.0, (y0 + y1) / 2.0, (x1 - x0).max(20.0), (y1 - y0).max(20.0))
+    } else {
+        (0.0, 0.0, 2.0 * x0.abs().max(x1.abs()).max(10.0), 2.0 * y0.abs().max(y1.abs()).max(10.0))
+    };
+    let fit = ((w - 12.0).max(4.0) / bw).min((h - 2.0).max(2.0) / (bh * ASPECT));
+    let xf = Xform {
+        mid_x: area.x as f64 + w / 2.0,
+        mid_y: area.y as f64 + h / 2.0,
+        scale: fit * view.zoom,
+        cx: fcx + view.pan_x,
+        cy: fcy + view.pan_y,
+    };
+    app.graph_x = xf;
+    app.graph_area = area;
+    p.hit(area, HitKind::Graph);
+
+    let cells: Vec<(f64, f64)> = g.nodes.iter().map(|n| xf.to_screen(n.x, n.y)).map(|(x, y)| (x.floor(), y.floor())).collect();
+    let inside = |(x, y): (f64, f64)| x >= area.x as f64 && x < area.right() as f64 && y >= area.y as f64 && y < area.bottom() as f64;
+    let hover = match &p.hover {
+        Some(Act::GraphNode(id)) => g.find(id),
+        _ => None,
+    };
+    let picked = app.graph_sel.as_ref().and_then(|s| g.find(s));
+    let focus: Vec<usize> = hover.into_iter().chain(picked).collect();
+    let near = |i: usize| focus.iter().any(|&f| f == i || g.edges.iter().any(|&(a, b)| (a == f && b == i) || (b == f && a == i)));
+
+    // folder colours from the theme
+    let mut folders: Vec<&str> = g.nodes.iter().filter(|n| !n.folder.is_empty()).map(|n| n.folder.as_str()).collect();
+    folders.sort();
+    folders.dedup();
+    let pal = ["s2", "s3", "cyan", "teal", "amber", "s5", "flame", "sea", "s4", "s1"];
+    let colour = |n: &crate::graph::GNode| -> Color {
+        match folders.iter().position(|f| *f == n.folder) {
+            Some(i) if !n.folder.is_empty() => app.t.c(pal[i % pal.len()]),
+            _ => app.t.c("dim"),
+        }
+    };
+    let (line_c, acc, ink, faint, dim, raise) =
+        (app.t.c("line"), app.t.c("accent"), app.t.c("ink"), app.t.c("faint"), app.t.c("dim"), app.t.c("raise"));
+
+    // lines, then the ones touching the dot in focus on top
+    let top = area.y as f64 + h;
+    let centre_of = |i: usize| (cells[i].0 + 0.5, top - (cells[i].1 + 0.5));
+    let lit: Vec<(usize, usize)> = g.edges.iter().copied().filter(|&(a, b)| focus.contains(&a) || focus.contains(&b)).collect();
+    let canvas = Canvas::default()
+        .marker(Marker::Braille)
+        .background_color(p.bg)
+        .x_bounds([area.x as f64, area.right() as f64])
+        .y_bounds([0.0, h])
+        .paint(|ctx| {
+            for &(a, b) in &g.edges {
+                let ((ax, ay), (bx, by)) = (centre_of(a), centre_of(b));
+                ctx.draw(&CLine { x1: ax, y1: ay, x2: bx, y2: by, color: line_c });
+            }
+            ctx.layer();
+            for &(a, b) in &lit {
+                let ((ax, ay), (bx, by)) = (centre_of(a), centre_of(b));
+                ctx.draw(&CLine { x1: ax, y1: ay, x2: bx, y2: by, color: acc });
+            }
+        });
+    canvas.render(area, p.buf);
+
+    // dots
+    let mut taken = vec![false; area.width as usize * area.height as usize];
+    let take = |x: u16, y: u16, taken: &mut Vec<bool>| {
+        let i = (y - area.y) as usize * area.width as usize + (x - area.x) as usize;
+        let was = taken[i];
+        taken[i] = true;
+        was
+    };
+    app.graph_pts.clear();
+    let mut shown = vec![];
+    for (i, n) in g.nodes.iter().enumerate() {
+        if !inside(cells[i]) {
+            continue;
+        }
+        let (x, y) = (cells[i].0 as u16, cells[i].1 as u16);
+        let centre = g.centre == Some(i);
+        let (glyph, col) = if centre {
+            ("◉", acc)
+        } else if n.missing {
+            ("○", faint)
+        } else {
+            ("●", colour(n))
+        };
+        let mut st = Style::default().fg(col).bg(p.bg);
+        if focus.contains(&i) {
+            st = st.bg(raise).add_modifier(Modifier::BOLD);
+        } else if !focus.is_empty() && !near(i) {
+            st = st.add_modifier(Modifier::DIM);
+        }
+        p.put(x, y, glyph, st, area.right());
+        take(x, y, &mut taken);
+        p.hit(Rect::new(x, y, 1, 1), HitKind::Act(Act::GraphNode(n.id.clone())));
+        app.graph_pts.push((n.id.clone(), x as f64, y as f64));
+        shown.push(i);
+    }
+    // labels: the dot in focus, the note in the middle, then the best linked
+    let crowded = shown.len() > 40;
+    let mut order = shown.clone();
+    order.sort_by(|&a, &b| {
+        let rank = |i: usize| (!focus.contains(&i), g.centre != Some(i), std::cmp::Reverse(g.nodes[i].degree));
+        rank(a).cmp(&rank(b)).then_with(|| g.nodes[a].label.cmp(&g.nodes[b].label))
+    });
+    let limit = if crowded { 120 } else { order.len() };
+    for &i in order.iter().take(limit) {
+        let n = &g.nodes[i];
+        let (x, y) = (cells[i].0 as u16, cells[i].1 as u16);
+        let text = crate::util::crop(&n.label, 24);
+        let tw = cell_len(&text) as u16;
+        let fits = |sx: u16, taken: &Vec<bool>| {
+            sx >= area.x
+                && sx + tw <= area.right()
+                && (sx.saturating_sub(1).max(area.x)..(sx + tw + 1).min(area.right()))
+                    .all(|cx| !taken[(y - area.y) as usize * area.width as usize + (cx - area.x) as usize] || (cx == x))
+        };
+        let spot = [x + 2, x.saturating_sub(tw + 1)].into_iter().find(|&sx| fits(sx, &taken));
+        let Some(sx) = spot else { continue };
+        let is_focus = focus.contains(&i);
+        let mut st = Style::default().fg(if is_focus || g.centre == Some(i) {
+            ink
+        } else if n.missing || (crowded && !near(i)) {
+            faint
+        } else {
+            dim
+        });
+        st = st.bg(p.bg);
+        if is_focus {
+            st = st.bg(raise).add_modifier(Modifier::BOLD);
+        } else if g.centre == Some(i) {
+            st = st.add_modifier(Modifier::BOLD);
+        } else if !focus.is_empty() && !near(i) {
+            st = st.add_modifier(Modifier::DIM);
+        }
+        p.put(sx, y, &text, st, area.right());
+        for cx in sx..sx + tw {
+            take(cx, y, &mut taken);
+        }
+        p.hit(Rect::new(sx, y, tw, 1), HitKind::Act(Act::GraphNode(n.id.clone())));
+    }
+    if g.nodes.len() <= 1 && !whole {
+        let msg = "No links in or out yet.";
+        p.put(area.x + 1, area.y, msg, Style::default().fg(dim).bg(p.bg), area.right());
+    }
+    if g.capped {
+        let msg = format!("showing the first {} notes", crate::graph::LOCAL_MAX);
+        p.put(area.x + 1, area.y, &msg, Style::default().fg(faint).bg(p.bg), area.right());
     }
 }
 
@@ -936,6 +1152,20 @@ impl App {
             out.extend(k("enter", "search every note", Some(Act::Search)));
             out.extend(k("↑↓", "move", None));
             out.extend(k("esc", "clear", None));
+            return out;
+        }
+        if let Some(whole) = self.graph_active() {
+            out.extend(k("↑↓←→", "dots", None));
+            out.extend(k("enter", "open", None));
+            if whole {
+                out.extend(k("+ − wheel", "zoom", None));
+                out.extend(k("drag", "pan", None));
+            } else {
+                out.extend(k("+ −", "depth", None));
+            }
+            out.extend(k("0", "reset", Some(Act::GraphReset)));
+            out.extend(k("esc", "back", None));
+            out.extend(k("q", "quit", Some(Act::Quit)));
             return out;
         }
         if self.narrow() && self.focus == Focus::None {

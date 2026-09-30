@@ -1,20 +1,20 @@
 ╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ 2026-09-28 ───────────────────────────────────────────────────────────────────╮
 │ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ Daily  ·  edited 9d ago                                                        │
 │▌All notes             8││────────────────────────────────────────││                                                                                │
-│ Recent                8││▌2026-09-28  Daily                   9d ││  Note   Links 0   Outline 1                                                    │
-│ FOLDERS                ││ 2026-09-29  Daily                   8d ││ ━━━━━━──────────────────────────────────────────────────────────────────────── │
-│   Daily               2││ Books to read  Reading              3d ││                                                                                │
-│ ▸ Projects            3││ Garden Plan  Projects               6d ││ Sunday                                                                         │
-│   Reading             1││ Ideas                               7d ││ ─────────────────────────────────────────────────────────────────────────────  │
-│ TAGS                   ││ Ideas  Projects                     5d ││                                                                                │
-│ #garden               2││ Shelves  Projects/Kitchen           4d ││ Walked the dog. Planned the beds in Garden Plan. #journal                      │
-│ #guide                1││ Welcome                             2d ││                                                                                │
+│ Recent                8││▌2026-09-28  Daily                   9d ││  Note   Links 0   Outline 1   Graph                                            │
+│ Graph                 8││ 2026-09-29  Daily                   8d ││ ━━━━━━──────────────────────────────────────────────────────────────────────── │
+│ FOLDERS                ││ Books to read  Reading              3d ││                                                                                │
+│   Daily               2││ Garden Plan  Projects               6d ││ Sunday                                                                         │
+│ ▸ Projects            3││ Ideas                               7d ││ ─────────────────────────────────────────────────────────────────────────────  │
+│   Reading             1││ Ideas  Projects                     5d ││                                                                                │
+│ TAGS                   ││ Shelves  Projects/Kitchen           4d ││ Walked the dog. Planned the beds in Garden Plan. #journal                      │
+│ #garden               2││ Welcome                             2d ││                                                                                │
+│ #guide                1││                                        ││                                                                                │
 │ #inbox                1││                                        ││                                                                                │
 │ #journal              2││                                        ││                                                                                │
 │ #projects/garden      2││                                        ││                                                                                │
 │ #reading              1││                                        ││                                                                                │
 │ #start                1││                                        ││                                                                                │
-│                        ││                                        ││                                                                                │
 │                        ││                                        ││                                                                                │
 │                        ││                                        ││                                                                                │
 │                        ││                                        ││                                                                                │

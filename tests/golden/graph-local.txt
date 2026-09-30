@@ -1,0 +1,34 @@
+╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ Welcome ──────────────────────────────────────────────────────────────────────╮
+│ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ Fern Vault  ·  edited 2d ago                                                   │
+│▌All notes             8││────────────────────────────────────────││                                                                                │
+│ Recent                8││ 2026-09-28  Daily                   9d ││  Note   Links 2   Outline 4   Graph                                            │
+│ Graph                 8││ 2026-09-29  Daily                   8d ││ ─────────────────────────────━━━━━━━────────────────────────────────────────── │
+│ FOLDERS                ││ Books to read  Reading              3d ││                                                                                │
+│   Daily               2││ Garden Plan  Projects               6d ││                                                                                │
+│ ▸ Projects            3││ Ideas                               7d ││                                                                                │
+│   Reading             1││ Ideas  Projects                     5d ││                          ○⡀Missing Note                                        │
+│ TAGS                   ││ Shelves  Projects/Kitchen           4d ││                           ⠑⡄                                                   │
+│ #garden               2││▌Welcome                             2d ││                            ⠈⢆                                                  │
+│ #guide                1││                                        ││                              ⠣⡀                                                │
+│ #inbox                1││                                        ││                               ⠑⡄                           ⣀● Ideas            │
+│ #journal              2││                                        ││                                ⠈⢆                      ⢀⡠⠒⠉                    │
+│ #projects/garden      2││                                        ││                                  ⠱⡀                 ⣀⠔⠊⠁                       │
+│ #reading              1││                                        ││                                   ⠘⢄            ⢀⡠⠒⠉                           │
+│ #start                1││                                        ││                                    ⠈⢢        ⣀⠔⠊⠁                              │
+│                        ││                                        ││                                      ⠱⡀  ⢀⡠⠒⠉                                  │
+│                        ││                                        ││                                       ⢘◉⠊Welcome                               │
+│                        ││                                        ││                                      ⡠⠃⢣                                       │
+│                        ││                                        ││                                    ⢀⠜  ⢸                                       │
+│                        ││                                        ││                                   ⡠⠃   ⠘⡄                                      │
+│                        ││                                        ││                                 ⢀⠎      ⡇                                      │
+│                        ││                                        ││                                ⡰⠁       ⢣                                      │
+│                        ││                                        ││                              ⢠⠊         ⢸                                      │
+│                        ││                                        ││                             ⡔⠁          ⠘⡄                                     │
+│                        ││                                        ││                           ⢠⠊             ⡇                                     │
+│                        ││                                        ││                          ●⠣Garden Plan   ⢣                                     │
+│                        ││                                        ││                              ⠉⠑⠒⠤⢄⡀      ⢸                                     │
+│                        ││                                        ││                                   ⠈⠉⠒⠢⠤⣀ ⠘⡄                                    │
+│                        ││                                        ││                                         ⠉⠑● Shelves                            │
+│                        ││                                        ││                                           depth 1 · + more · − fewer · 0 reset │
+╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰────────────────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
+ ↑↓←→ dots   enter open   + − depth   0 reset   esc back   q quit

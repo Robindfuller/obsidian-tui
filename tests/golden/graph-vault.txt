@@ -1,0 +1,30 @@
+╭────────────────────────╮╭─ Graph ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Fern Vault            «││                                                                                                                          │
+│ All notes             8││                                                   ●⡀2026-09-29                                                           │
+│ Recent                8││                                                    ⠈⠢⡀                                      ⣀● Ideas                     │
+│▌Graph                 8││                                                      ⠈⠢⡀                                 ⢀⠤⠊                             │
+│ FOLDERS                ││                                                        ⠈⠢⢄                            ⢀⡠⠊⠁                               │
+│   Daily               2││                                                           ⠑⢄                        ⡠⠒⠁                                  │
+│ ▸ Projects            3││                                                             ⠑⢄                   ⡠⠔⠉                                     │
+│   Reading             1││                                                               ⠑●⠤Shelves⠤⠤⠤⠤⠤⠤⠤●⠊Welcome                                 │
+│ TAGS                   ││                                                                ⠈⢢             ⡜                                          │
+│ #garden               2││                                                                  ⠱⡀          ⢰⠁                                          │
+│ #guide                1││                                                                   ⠑⡄        ⢠⠃                                           │
+│ #inbox                1││                                                                    ⠈⢆      ⢀⠎                                            │
+│ #journal              2││                                                                      ⠣⡀    ⡜                                             │
+│ #projects/garden      2││                                                                       ⠱⡀  ⡸                                              │
+│ #reading              1││                                                                        ⠘⢄⢠⠃                                              │
+│ #start                1││                                                                         ⠈● Garden Plan                                   │
+│                        ││                                                                          ⠈⢆                                              │
+│                        ││                           ● Ideas                                         ⠘⡄                                             │
+│                        ││                                                                            ⠘⡄                                            │
+│                        ││                                                                             ⠸⡀                                           │
+│                        ││                                                                              ⠱⡀                                          │
+│                        ││                                                                               ⢣                                          │
+│                        ││                                                                                ⢣                                         │
+│                        ││                                                                                 ● 2026-09-28                             │
+│                        ││                                                                                                                          │
+│                        ││                                                                                                                          │
+│                        ││                                          ● Books to read                                                                 │
+╰────────────────────────╯╰─────────────────────────────────────────────────────────────────────────── 8 notes · wheel zooms · drag pans · 0 resets ─╯
+ ↑↓←→ dots   enter open   + − wheel zoom   drag pan   0 reset   esc back   q quit

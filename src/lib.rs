@@ -6,6 +6,7 @@ pub mod app;
 pub mod draw;
 pub mod editor;
 pub mod events;
+pub mod graph;
 pub mod harness;
 pub mod input;
 pub mod md;

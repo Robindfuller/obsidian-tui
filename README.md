@@ -43,7 +43,7 @@ obsidian-tui            # the current folder
 
 What's on screen:
 
-- **Sidebar:** All notes, Recent, the folder tree (click ▸ to open a folder
+- **Sidebar:** All notes, Recent, Graph, the folder tree (click ▸ to open a folder
   without leaving the list), and every #tag. Nested tags take in their
   children: `#projects` shows `#projects/garden` too.
 - **Note list:** the notes in whatever the sidebar has chosen, a to z or newest
@@ -56,7 +56,28 @@ What's on screen:
   that don't exist are dimmed. `![[embeds]]` show as a line you can click to
   open the file. `%%comments%%` are hidden.
 - **Tabs:** Note, Links (backlinks with the line that links here, and every
-  link out) and Outline (click a heading to jump to it).
+  link out), Outline (click a heading to jump to it) and Graph.
+
+## Graph
+
+Like Obsidian's graph view, drawn with braille dots and lines.
+
+- **The note's graph** (`g`, or the Graph tab): the open note in the middle
+  (◉), with what it links to and what links to it around it. `+` and `-`
+  reach out 1, 2 or 3 links. Links to notes that don't exist yet are hollow
+  dimmer dots (○).
+- **The vault's graph** (Graph in the sidebar): every note, filling the space
+  beside the sidebar.
+
+Dots are coloured by top-level folder. Hover a dot to pick it out with its
+labels and lines; click a dot or its name to open the note. The arrow keys
+move between nearby dots and enter opens one. The wheel zooms (on the spot
+under the mouse), dragging empty space pans, `+` `-` zoom the vault's graph,
+`0` resets the view and esc goes back.
+
+The layout is worked out the same way every time, so a vault always gives the
+same picture. It's worked out once and kept until the vault changes: a
+3,000-note vault takes about half a second the first time.
 
 Links resolve the way Obsidian does: a path from the vault root or from the
 note's own folder, then a note of that name (the one nearest the linking note
@@ -107,7 +128,9 @@ theirs, or keep editing. Files that aren't UTF-8 text are left alone: use `E`.
 | n, N | next / previous search match in the note |
 | [ ], alt+← → | back / forward |
 | ← or h | move into the sidebar (↑ ↓ there, → or esc to come back) |
-| 1 2 3 | Note, Links, Outline |
+| 1 2 3 4 | Note, Links, Outline, Graph |
+| g | the note's graph (again for the note) |
+| + -, 0 | in a graph: more or fewer links (zoom in the vault's), reset the view |
 | space, pgup, pgdn, ctrl+d, ctrl+u | scroll the note |
 | J K, home, end | scroll a line, or to the top or bottom |
 | e | edit the note here (see Editing) |

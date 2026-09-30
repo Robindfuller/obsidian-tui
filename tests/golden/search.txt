@@ -1,13 +1,14 @@
 ╭────────────────────────╮╭─ Search: compost ──────────────────────╮╭─ 2026-09-29 ───────────────────────────────────────────────────────────────────╮
 │ Fern Vault            «││ ⌕ filter · enter to search again       ││ Daily  ·  edited 8d ago                                                        │
 │ All notes             8││────────────────────────────────────────││                                                                                │
-│ Recent                8││▌2026-09-29  Daily                   8d ││  Note   Links 0   Outline 1                                n next match N back │
-│▌“compost”             3││   …the Shelves. Compost arrives Frida… ││ ━━━━━━──────────────────────────────────────────────────────────────────────── │
-│ FOLDERS                ││ Garden Plan  Projects               6d ││                                                                                │
-│   Daily               2││   …the fence. Compost first, then see… ││ Monday                                                                         │
-│ ▸ Projects            3││ Welcome                             2d ││ ─────────────────────────────────────────────────────────────────────────────  │
-│   Reading             1││   Order compost                        ││                                                                                │
-│ TAGS                   ││                                        ││ Bought timber for the Shelves. Compost arrives Friday. #journal                │
+│ Recent                8││▌2026-09-29  Daily                   8d ││  Note   Links 0   Outline 1   Graph                        n next match N back │
+│ Graph                 8││   …the Shelves. Compost arrives Frida… ││ ━━━━━━──────────────────────────────────────────────────────────────────────── │
+│▌“compost”             3││ Garden Plan  Projects               6d ││                                                                                │
+│ FOLDERS                ││   …the fence. Compost first, then see… ││ Monday                                                                         │
+│   Daily               2││ Welcome                             2d ││ ─────────────────────────────────────────────────────────────────────────────  │
+│ ▸ Projects            3││   Order compost                        ││                                                                                │
+│   Reading             1││                                        ││ Bought timber for the Shelves. Compost arrives Friday. #journal                │
+│ TAGS                   ││                                        ││                                                                                │
 │ #garden               2││                                        ││                                                                                │
 │ #guide                1││                                        ││                                                                                │
 │ #inbox                1││                                        ││                                                                                │
@@ -15,7 +16,6 @@
 │ #projects/garden      2││                                        ││                                                                                │
 │ #reading              1││                                        ││                                                                                │
 │ #start                1││                                        ││                                                                                │
-│                        ││                                        ││                                                                                │
 │                        ││                                        ││                                                                                │
 │                        ││                                        ││                                                                                │
 │                        ││                                        ││                                                                                │

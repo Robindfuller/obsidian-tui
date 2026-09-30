@@ -36,7 +36,7 @@ fn arrows_move_the_list_after_clicking_the_note() {
 #[test]
 fn arrows_move_the_list_after_clicking_the_sidebar() {
     let mut t = h("arrow-rail", 150, 40);
-    t.click_text("Projects");
+    { let (x, y) = t.find("▸ Projects").unwrap(); t.click(x + 2, y); }
     assert_eq!(t.app.view, "folder:Projects");
     assert_eq!(t.app.focus, Focus::None);
     let first = sel(&t);
@@ -302,7 +302,7 @@ fn state_is_remembered_per_vault() {
     let (v, st) = vault("state");
     {
         let mut t = obsidian_tui::harness::H::new(&v, &st, 150, 40);
-        t.click_text("Projects");
+        { let (x, y) = t.find("▸ Projects").unwrap(); t.click(x + 2, y); }
         t.click_text("Shelves");
         t.key(KeyCode::Char('b'));
         t.app.save_state();
@@ -327,7 +327,7 @@ fn folders_fold_and_open() {
     let (x, y) = t.find("▾ Projects").unwrap();
     t.click(x, y);
     assert!(!rail(&mut t).contains("Kitchen"));
-    t.click_text("Projects");
+    { let (x, y) = t.find("▸ Projects").unwrap(); t.click(x + 2, y); }
     t.click_text("Kitchen");
     assert_eq!(t.app.view, "folder:Projects/Kitchen");
     assert_eq!(t.app.rows.len(), 1);
@@ -374,6 +374,7 @@ fn narrow_window_steps_folder_then_notes_then_note() {
     assert!(s.contains("FOLDERS") && !s.contains("filter"));
     golden("narrow-rail", &s);
     // up and down move through the sidebar without leaving it
+    t.key(KeyCode::Down);
     t.key(KeyCode::Down);
     t.key(KeyCode::Down);
     t.key(KeyCode::Down);

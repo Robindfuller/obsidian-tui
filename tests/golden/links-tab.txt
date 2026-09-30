@@ -1,20 +1,20 @@
 ╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ Welcome ──────────────────────────────────────────────────────────────────────╮
 │ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ Fern Vault  ·  edited 2d ago                                                   │
 │▌All notes             8││────────────────────────────────────────││                                                                                │
-│ Recent                8││ 2026-09-28  Daily                   9d ││  Note   Links 2   Outline 4                                                    │
-│ FOLDERS                ││ 2026-09-29  Daily                   8d ││ ───────━━━━━━━━━────────────────────────────────────────────────────────────── │
-│   Daily               2││ Books to read  Reading              3d ││                                                                                │
-│ ▸ Projects            3││ Garden Plan  Projects               6d ││ LINKED MENTIONS · 2                                                            │
-│   Reading             1││ Ideas                               7d ││                                                                                │
-│ TAGS                   ││ Ideas  Projects                     5d ││ Ideas                                                                          │
-│ #garden               2││ Shelves  Projects/Kitchen           4d ││   Link back to Welcome                                                         │
-│ #guide                1││▌Welcome                             2d ││                                                                                │
-│ #inbox                1││                                        ││ Garden Plan  Projects                                                          │
-│ #journal              2││                                        ││   The plan for the spring. Back to Welcome.                                    │
-│ #projects/garden      2││                                        ││                                                                                │
-│ #reading              1││                                        ││ LINKS OUT · 5                                                                  │
-│ #start                1││                                        ││                                                                                │
-│                        ││                                        ││ • Garden Plan                                                                  │
+│ Recent                8││ 2026-09-28  Daily                   9d ││  Note   Links 2   Outline 4   Graph                                            │
+│ Graph                 8││ 2026-09-29  Daily                   8d ││ ───────━━━━━━━━━────────────────────────────────────────────────────────────── │
+│ FOLDERS                ││ Books to read  Reading              3d ││                                                                                │
+│   Daily               2││ Garden Plan  Projects               6d ││ LINKED MENTIONS · 2                                                            │
+│ ▸ Projects            3││ Ideas                               7d ││                                                                                │
+│   Reading             1││ Ideas  Projects                     5d ││ Ideas                                                                          │
+│ TAGS                   ││ Shelves  Projects/Kitchen           4d ││   Link back to Welcome                                                         │
+│ #garden               2││▌Welcome                             2d ││                                                                                │
+│ #guide                1││                                        ││ Garden Plan  Projects                                                          │
+│ #inbox                1││                                        ││   The plan for the spring. Back to Welcome.                                    │
+│ #journal              2││                                        ││                                                                                │
+│ #projects/garden      2││                                        ││ LINKS OUT · 5                                                                  │
+│ #reading              1││                                        ││                                                                                │
+│ #start                1││                                        ││ • Garden Plan                                                                  │
 │                        ││                                        ││ • Shelves                                                                      │
 │                        ││                                        ││ • Missing Note  (no such note)                                                 │
 │                        ││                                        ││ • diagram.png                                                                  │

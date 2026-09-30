@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 
 use crate::draw::Hit;
 use crate::editor::{Clip, Editor, Out, Saved};
+use crate::graph::{Graph, View, Xform};
 use crate::input::LineEdit;
 use crate::md::{Rendered, render};
 use crate::rich::{Act, Line, plain, sp};
@@ -144,6 +145,24 @@ pub struct App {
     /// what was opened outside the app (tests look here)
     pub opened: Vec<String>,
     pub headless: bool,
+    /// hops shown in the local graph, 1 to 3
+    pub graph_depth: usize,
+    pub gview_local: View,
+    pub gview_vault: View,
+    /// the note the local view was set for (a new note resets it)
+    gview_centre: Option<String>,
+    local_graph: Option<(String, usize, u64, std::rc::Rc<Graph>)>,
+    vault_graph: Option<(u64, std::rc::Rc<Graph>)>,
+    /// how the graph was drawn last time, for the mouse and the arrows
+    pub graph_x: Xform,
+    pub graph_area: ratatui::layout::Rect,
+    pub graph_pts: Vec<(String, f64, f64)>,
+    /// the dot the arrow keys have picked
+    pub graph_sel: Option<String>,
+    /// panning: where the mouse was pressed
+    pub graph_drag: Option<(u16, u16)>,
+    /// what the sidebar showed before the vault graph
+    pub graph_prev: String,
     /// the built-in editor, while a note is being edited
     pub editor: Option<Editor>,
     pub clip: Clip,
@@ -240,6 +259,18 @@ impl App {
             pending_out: vec![],
             opened: vec![],
             headless: false,
+            graph_depth: 1,
+            gview_local: View::default(),
+            gview_vault: View::default(),
+            gview_centre: None,
+            local_graph: None,
+            vault_graph: None,
+            graph_x: Xform::default(),
+            graph_area: ratatui::layout::Rect::default(),
+            graph_pts: vec![],
+            graph_sel: None,
+            graph_drag: None,
+            graph_prev: "all".into(),
             editor: None,
             clip: Clip::default(),
             edit_area: ratatui::layout::Rect::default(),
@@ -273,7 +304,7 @@ impl App {
         let valid = match view.split_once(':') {
             Some(("folder", f)) => self.vault.folder_count.contains_key(f),
             Some(("tag", t)) => self.vault.tags.contains_key(t),
-            _ => view == "all" || view == "recent",
+            _ => view == "all" || view == "recent" || view == "graph",
         };
         self.view = if valid { view } else { "all".into() };
         self.refresh_rows();
@@ -433,6 +464,7 @@ impl App {
             Some(("tag", t)) => format!("#{}", self.vault.tags.get(t).map(|x| x.0.as_str()).unwrap_or(t)),
             _ => match self.view.as_str() {
                 "recent" => "Recent".into(),
+                "graph" => "Graph".into(),
                 "search" => format!("Search: {}", self.query),
                 _ => "All notes".into(),
             },
@@ -484,6 +516,10 @@ impl App {
     pub fn set_view(&mut self, key: &str) {
         if key == "search" && self.query.is_empty() {
             return;
+        }
+        if key == "graph" && self.view != "graph" {
+            self.graph_prev = self.view.clone();
+            self.graph_sel = None;
         }
         if let Some(f) = key.strip_prefix("folder:") {
             // opening a folder shows the folders inside it, and its parents
@@ -657,6 +693,7 @@ impl App {
                 let links = collect_links(&lines);
                 (lines, links, vec![])
             }
+            3 => (vec![], vec![], vec![]),
             _ => match self.rendered(width) {
                 Some(r) => (r.lines.clone(), r.links.clone(), r.hits.clone()),
                 None => (vec![], vec![], vec![]),
@@ -865,6 +902,7 @@ impl App {
         let mut out = vec![
             e("all", "All notes".into(), "All", v.notes.len(), 0, None),
             e("recent", "Recent".into(), "Rec", v.notes.len().min(50), 0, None),
+            e("graph", "Graph".into(), "Grph", v.notes.len(), 0, None),
         ];
         if !self.query.is_empty() {
             let label = if self.query.starts_with('"') { self.query.clone() } else { format!("“{}”", self.query) };
@@ -954,6 +992,200 @@ impl App {
         } else {
             self.toast("Couldn't open it", target, Sev::Error);
         }
+    }
+
+    // ------------------------------------------------------------ graph
+    /// Which graph has the keys: the local one in the note's Graph tab, or
+    /// the whole vault's.
+    pub fn graph_active(&self) -> Option<bool> {
+        if self.editor.is_some() || self.focus != Focus::None {
+            return None;
+        }
+        let g = self.geo();
+        if self.view == "graph" && g.graph.is_some() {
+            return Some(true);
+        }
+        if self.tab == 3 && self.note.is_some() && g.note.is_some() {
+            return Some(false);
+        }
+        None
+    }
+
+    /// The open note's graph, built once per note, depth and vault change.
+    pub fn local_graph(&mut self) -> Option<std::rc::Rc<Graph>> {
+        let key = self.note.clone()?;
+        if self.gview_centre.as_deref() != Some(key.as_str()) {
+            self.gview_centre = Some(key.clone());
+            self.gview_local = View::default();
+            self.graph_sel = None;
+        }
+        if let Some((k, d, g, gr)) = &self.local_graph
+            && *k == key
+            && *d == self.graph_depth
+            && *g == self.vault.generation
+        {
+            return Some(gr.clone());
+        }
+        let gr = std::rc::Rc::new(Graph::local(&self.vault, &key, self.graph_depth));
+        self.local_graph = Some((key, self.graph_depth, self.vault.generation, gr.clone()));
+        Some(gr)
+    }
+
+    pub fn vault_graph(&mut self) -> std::rc::Rc<Graph> {
+        if let Some((g, gr)) = &self.vault_graph
+            && *g == self.vault.generation
+        {
+            return gr.clone();
+        }
+        let gr = std::rc::Rc::new(Graph::whole(&self.vault));
+        self.vault_graph = Some((self.vault.generation, gr.clone()));
+        gr
+    }
+
+    pub fn set_depth(&mut self, d: i64) {
+        self.graph_depth = d.clamp(1, 3) as usize;
+        self.gview_local = View::default();
+        self.dirty = true;
+    }
+
+    fn gview(&mut self, whole: bool) -> &mut View {
+        if whole { &mut self.gview_vault } else { &mut self.gview_local }
+    }
+
+    pub fn graph_reset(&mut self) {
+        let whole = self.view == "graph";
+        *self.gview(whole) = View::default();
+        self.dirty = true;
+    }
+
+    /// Zoom by `f`, keeping the point under (x, y) where it is.
+    pub fn graph_zoom(&mut self, at: Option<(u16, u16)>, f: f64) {
+        let whole = self.view == "graph";
+        let xf = self.graph_x;
+        let v = *self.gview(whole);
+        let zoom = (v.zoom * f).clamp(0.3, 40.0);
+        if xf.scale <= 0.0 {
+            self.gview(whole).zoom = zoom;
+            return;
+        }
+        let (sx, sy) = at.map(|(x, y)| (x as f64 + 0.5, y as f64 + 0.5)).unwrap_or((xf.mid_x, xf.mid_y));
+        let (gx, gy) = xf.to_graph(sx, sy);
+        let scale = xf.scale * zoom / v.zoom;
+        let cx = gx - (sx - xf.mid_x) / scale;
+        let cy = gy - (sy - xf.mid_y) / (scale * crate::graph::ASPECT);
+        let view = self.gview(whole);
+        view.zoom = zoom;
+        view.pan_x += cx - xf.cx;
+        view.pan_y += cy - xf.cy;
+        self.dirty = true;
+    }
+
+    /// Drag the picture by (dx, dy) cells.
+    pub fn graph_pan(&mut self, dx: f64, dy: f64) {
+        let whole = self.view == "graph";
+        let s = self.graph_x.scale.max(0.0001);
+        let view = self.gview(whole);
+        view.pan_x -= dx / s;
+        view.pan_y -= dy / (s * crate::graph::ASPECT);
+        self.dirty = true;
+    }
+
+    /// A dot was clicked (or picked and entered).
+    pub fn graph_open(&mut self, id: &str) {
+        if let Some(name) = id.strip_prefix('?') {
+            self.toast("", &format!("There's no note called “{name}” in this vault yet."), Sev::Info);
+            return;
+        }
+        if self.view == "graph" {
+            let prev = self.graph_prev.clone();
+            self.set_view(&prev);
+        }
+        self.run(&Act::Open { key: id.to_string(), heading: None });
+    }
+
+    /// Arrows between dots: the nearest one that way.
+    pub fn graph_step(&mut self, dx: f64, dy: f64) {
+        if self.graph_pts.is_empty() {
+            return;
+        }
+        let from = self
+            .graph_sel
+            .as_ref()
+            .and_then(|s| self.graph_pts.iter().find(|p| &p.0 == s))
+            .or_else(|| self.note.as_ref().and_then(|n| self.graph_pts.iter().find(|p| &p.0 == n)))
+            .map(|p| (p.1, p.2));
+        let Some((fx, fy)) = from else {
+            // nothing picked yet: the dot nearest the middle
+            let (mx, my) = (self.graph_x.mid_x, self.graph_x.mid_y);
+            let best = self.graph_pts.iter().min_by(|a, b| {
+                let da = (a.1 - mx).powi(2) + (2.0 * (a.2 - my)).powi(2);
+                let db = (b.1 - mx).powi(2) + (2.0 * (b.2 - my)).powi(2);
+                da.total_cmp(&db).then_with(|| a.0.cmp(&b.0))
+            });
+            self.graph_sel = best.map(|b| b.0.clone());
+            return;
+        };
+        let mut best: Option<(f64, &String)> = None;
+        for (id, px, py) in &self.graph_pts {
+            let (vx, vy) = (px - fx, (py - fy) * 2.0);
+            let along = vx * dx + vy * dy;
+            if along <= 0.1 {
+                continue;
+            }
+            let perp = (vx * dy - vy * dx).abs();
+            let score = along + perp * 2.0;
+            if best.is_none_or(|(b, bid)| score < b || (score == b && id < bid)) {
+                best = Some((score, id));
+            }
+        }
+        if let Some((_, id)) = best {
+            self.graph_sel = Some(id.clone());
+        }
+        self.dirty = true;
+    }
+
+    /// Keys while a graph has them. True if the key was used.
+    pub fn graph_key(&mut self, k: &ratatui::crossterm::event::KeyEvent) -> bool {
+        use ratatui::crossterm::event::KeyCode;
+        let Some(whole) = self.graph_active() else { return false };
+        match k.code {
+            KeyCode::Left | KeyCode::Char('h') => self.graph_step(-1.0, 0.0),
+            KeyCode::Right | KeyCode::Char('l') => self.graph_step(1.0, 0.0),
+            KeyCode::Up | KeyCode::Char('k') => self.graph_step(0.0, -1.0),
+            KeyCode::Down | KeyCode::Char('j') => self.graph_step(0.0, 1.0),
+            KeyCode::Enter => match self.graph_sel.clone() {
+                Some(id) => self.graph_open(&id),
+                None if !whole => self.run(&Act::Tab(0)),
+                None => {}
+            },
+            KeyCode::Esc => {
+                if self.graph_sel.is_some() {
+                    self.graph_sel = None;
+                } else if whole {
+                    self.escape();
+                } else {
+                    self.run(&Act::Tab(0));
+                }
+            }
+            KeyCode::Char('+') | KeyCode::Char('=') => {
+                if whole {
+                    self.graph_zoom(None, 1.25)
+                } else {
+                    self.set_depth(self.graph_depth as i64 + 1)
+                }
+            }
+            KeyCode::Char('-') | KeyCode::Char('_') => {
+                if whole {
+                    self.graph_zoom(None, 0.8)
+                } else {
+                    self.set_depth(self.graph_depth as i64 - 1)
+                }
+            }
+            KeyCode::Char('0') => self.graph_reset(),
+            _ => return false,
+        }
+        self.dirty = true;
+        true
     }
 
     // ------------------------------------------------------------ editing
@@ -1127,7 +1359,14 @@ impl App {
                     self.set_view(&k);
                 }
             }
+            Act::GraphNode(id) => {
+                let id = id.clone();
+                self.graph_open(&id);
+            }
+            Act::Depth(d) => self.set_depth(self.graph_depth as i64 + d),
+            Act::GraphReset => self.graph_reset(),
             Act::Tab(i) => {
+                self.graph_sel = None;
                 self.tab = *i;
                 self.note_scroll = 0;
                 self.link_sel = None;
@@ -1213,7 +1452,9 @@ impl App {
             ("n  N", "next / previous search match"),
             ("[  ]  alt+← →", "back / forward"),
             ("← h", "move to the sidebar (→ to come back)"),
-            ("1 2 3", "note, links, outline"),
+            ("1 2 3 4", "note, links, outline, graph"),
+            ("g", "the note's graph (+ − for more hops)"),
+            ("0", "reset the graph's zoom and pan"),
             ("space  pgup pgdn", "scroll the note"),
             ("J K  home end", "scroll a line / to the ends"),
             ("e", "edit here (ctrl+s saves, esc done)"),
@@ -1274,7 +1515,10 @@ impl App {
     }
 
     pub fn escape(&mut self) {
-        if self.link_sel.is_some() {
+        if self.view == "graph" {
+            let prev = self.graph_prev.clone();
+            self.set_view(&prev);
+        } else if self.link_sel.is_some() {
             self.link_sel = None;
         } else if self.focus == Focus::Rail {
             self.focus = Focus::None;
@@ -1309,6 +1553,10 @@ impl App {
 
     /// Into the filter box; a narrow window shows the list to type into.
     pub fn focus_filter(&mut self) {
+        if self.view == "graph" {
+            let prev = self.graph_prev.clone();
+            self.set_view(&prev);
+        }
         self.focus = Focus::Filter;
         self.stage = Stage::List;
         self.dirty = true;

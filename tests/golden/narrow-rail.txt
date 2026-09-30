@@ -2,6 +2,7 @@
 │ Fern Vault                                                         │
 │▌All notes                                                         8│
 │ Recent                                                            8│
+│ Graph                                                             8│
 │ FOLDERS                                                            │
 │   Daily                                                           2│
 │ ▸ Projects                                                        3│
@@ -14,7 +15,6 @@
 │ #projects/garden                                                  2│
 │ #reading                                                          1│
 │ #start                                                            1│
-│                                                                    │
 │                                                                    │
 │                                                                    │
 │                                                                    │
