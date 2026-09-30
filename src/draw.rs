@@ -7,7 +7,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 
-use crate::app::{App, Focus, Sev};
+use crate::app::{App, Focus, Sev, Stage};
 use crate::rich::{Act, Line, Seg, line_width, plain, sp, wrap};
 use crate::util::{ago, cell_len, char_w, crop, fit, rjust};
 
@@ -53,21 +53,19 @@ impl App {
     pub fn geo(&self) -> Geo {
         let (w, h) = self.size;
         let main_h = h.saturating_sub(1);
-        let rail_w = if w < 60 {
-            0
-        } else if self.rail_collapsed {
-            6
-        } else {
-            26
-        };
+        if self.narrow() {
+            // one pane at a time, the whole width
+            let full = Rect::new(0, 0, w, main_h);
+            let (rail, list, note) = match self.shown() {
+                Stage::Rail => (full, None, None),
+                Stage::List => (Rect::new(0, 0, 0, main_h), Some(full), None),
+                Stage::Note => (Rect::new(0, 0, 0, main_h), None, Some(full)),
+            };
+            return Geo { rail, list, note, keybar: Rect::new(0, main_h, w, 1) };
+        }
+        let rail_w = if self.rail_collapsed { 6 } else { 26 };
         let rest = w.saturating_sub(rail_w);
-        let (list, note) = if self.narrow() {
-            if self.narrow_note && self.note.is_some() {
-                (None, Some(Rect::new(rail_w, 0, rest, main_h)))
-            } else {
-                (Some(Rect::new(rail_w, 0, rest, main_h)), None)
-            }
-        } else {
+        let (list, note) = {
             let lw = self.list_w.clamp(28, rest.saturating_sub(40).max(28));
             (Some(Rect::new(rail_w, 0, lw, main_h)), Some(Rect::new(rail_w + lw, 0, rest - lw, main_h)))
         };
@@ -298,7 +296,8 @@ fn draw_rail(app: &mut App, p: &mut P, r: Rect) {
         app.t.c("panel"),
         app.t.c("raise"),
     );
-    let col = if app.focus == Focus::Rail { faint } else { line };
+    let narrow = app.narrow();
+    let col = if app.focus == Focus::Rail || narrow { faint } else { line };
     p.frame(r, col, None, None);
     let inn = inner(r);
     if inn.width == 0 {
@@ -311,7 +310,10 @@ fn draw_rail(app: &mut App, p: &mut P, r: Rect) {
     let hr = Rect::new(inn.x, inn.y, inn.width, 1);
     let hbg = if p.hovering(hr) { panel } else { p.bg };
     p.fill(hr, hbg);
-    if app.rail_collapsed {
+    if narrow {
+        let name = crop(&app.vault.name, w.saturating_sub(2));
+        p.put(inn.x, inn.y, &format!(" {name}"), Style::default().fg(dim).bg(p.bg).add_modifier(Modifier::BOLD), inn.right());
+    } else if app.rail_collapsed {
         p.put(inn.x, inn.y, &fit(" »", w), Style::default().fg(faint).bg(hbg), inn.right());
     } else {
         let name = crop(&app.vault.name, w.saturating_sub(4));
@@ -319,12 +321,14 @@ fn draw_rail(app: &mut App, p: &mut P, r: Rect) {
         let pad = w.saturating_sub(cell_len(&name) + 2);
         p.put(x, inn.y, &(" ".repeat(pad) + "«"), Style::default().fg(faint).bg(hbg), inn.right());
     }
-    p.hit(hr, HitKind::Act(Act::ToggleRail));
+    if !narrow {
+        p.hit(hr, HitKind::Act(Act::ToggleRail));
+    }
     let entries = app.rail_entries();
     let h = inn.height.saturating_sub(1) as usize;
     // keep the current entry in view
     if let Some(i) = entries.iter().position(|e| e.key.as_deref() == Some(app.view.as_str()))
-        && (app.focus == Focus::Rail || app.scroll_sel)
+        && (app.focus == Focus::Rail || app.scroll_sel || narrow)
     {
         if i < app.rail_scroll {
             app.rail_scroll = i;
@@ -346,7 +350,7 @@ fn draw_rail(app: &mut App, p: &mut P, r: Rect) {
             continue;
         };
         let on = app.view == *k;
-        let cursor = on && app.focus == Focus::Rail;
+        let cursor = on && (app.focus == Focus::Rail || narrow);
         let rbg = if cursor {
             raise
         } else if p.hovering(rr) {
@@ -361,7 +365,7 @@ fn draw_rail(app: &mut App, p: &mut P, r: Rect) {
         if on {
             st = st.add_modifier(Modifier::BOLD);
         }
-        if app.rail_collapsed {
+        if app.rail_collapsed && !narrow {
             p.put(x, y, &fit(&e.short, w - 1), st, inn.right());
             p.hit(rr, HitKind::Rail(k.clone(), None));
         } else {
@@ -426,8 +430,12 @@ fn draw_list(app: &mut App, p: &mut P, r: Rect) {
             _ => " · a to z".to_string(),
         }
     );
-    let title = app.view_label();
+    let title = if app.narrow() { format!("‹ {}", app.view_label()) } else { app.view_label() };
     p.frame(r, if focused { faint } else { line }, Some((&title, ink, true)), Some((&sub, faint)));
+    if app.narrow() {
+        let tw = (crate::util::cell_len(&title) as u16 + 2).min(r.width.saturating_sub(4));
+        p.hit(Rect::new(r.x + 2, r.y, tw, 1), HitKind::Act(Act::StageBack));
+    }
     let inn = inner(r);
     if inn.width < 4 || inn.height < 3 {
         return;
@@ -601,7 +609,7 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
     };
     let Some(note) = app.vault.note(&key) else { return };
     let (name, folder, mtime) = (note.name.clone(), note.folder.clone(), note.mtime);
-    let sub = if app.narrow() { "esc back · e edit" } else { "e edit · o obsidian" };
+    let sub = if app.narrow() { "esc back to the notes · e edit" } else { "e edit · o obsidian" };
     p.frame(r, line, Some((&name, ink, true)), Some((sub, faint)));
     let inn = Rect::new(r.x + 2, r.y + 1, r.width.saturating_sub(4), r.height.saturating_sub(2));
     if inn.width < 4 || inn.height < 4 {
@@ -609,6 +617,10 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
     }
     // where it lives, and when it last changed
     let mut head: Line = vec![];
+    if app.narrow() {
+        head.push(sp("‹ notes", dim).on(Act::StageBack));
+        head.push(sp("  ·  ", faint));
+    }
     if folder.is_empty() {
         head.push(sp(app.vault.name.clone(), faint).on(Act::Rail("all".into())));
     } else {
@@ -804,6 +816,36 @@ impl App {
             out.extend(k("↑↓", "move", None));
             out.extend(k("esc", "clear", None));
             return out;
+        }
+        if self.narrow() && self.focus == Focus::None {
+            match self.shown() {
+                Stage::Rail => {
+                    out.extend(k("↑↓", "pick", None));
+                    out.extend(k("enter →", "its notes", None));
+                    out.extend(k("←", "fold", None));
+                    out.extend(k("/", "search", Some(Act::Filter)));
+                    out.extend(k("q", "quit", Some(Act::Quit)));
+                    return out;
+                }
+                Stage::List => {
+                    out.extend(k("↑↓", "notes", None));
+                    out.extend(k("enter →", "read", None));
+                    out.extend(k("esc ←", "folders", Some(Act::StageBack)));
+                    out.extend(k("/", "search", Some(Act::Filter)));
+                    out.extend(k("?", "keys", Some(Act::Help)));
+                    out.extend(k("q", "quit", Some(Act::Quit)));
+                    return out;
+                }
+                Stage::Note => {
+                    out.extend(k("↑↓", "scroll", None));
+                    out.extend(k("tab", "links", None));
+                    out.extend(k("esc ←", "notes", Some(Act::StageBack)));
+                    out.extend(k("[ ]", "back", Some(Act::Back)));
+                    out.extend(k("e", "edit", Some(Act::Edit)));
+                    out.extend(k("q", "quit", Some(Act::Quit)));
+                    return out;
+                }
+            }
         }
         if self.focus == Focus::Rail {
             out.extend(k("↑↓", "sidebar", None));

@@ -1,0 +1,24 @@
+╭────────────────────────────────────────────────────────────────────╮
+│ Fern Vault                                                         │
+│▌All notes                                                         8│
+│ Recent                                                            8│
+│ FOLDERS                                                            │
+│   Daily                                                           2│
+│ ▸ Projects                                                        3│
+│   Reading                                                         1│
+│ TAGS                                                               │
+│ #garden                                                           2│
+│ #guide                                                            1│
+│ #inbox                                                            1│
+│ #journal                                                          2│
+│ #projects/garden                                                  2│
+│ #reading                                                          1│
+│ #start                                                            1│
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+│                                                                    │
+╰────────────────────────────────────────────────────────────────────╯
+ ↑↓ pick   enter → its notes   ← fold   / search   q quit

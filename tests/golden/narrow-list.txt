@@ -1,24 +1,24 @@
-╭────────────────────────╮╭─ All notes ────────────────────────────────────────╮
-│ Fern Vault            «││ ⌕ filter · enter to search all              ↕ name │
-│▌All notes             8││────────────────────────────────────────────────────│
-│ Recent                8││▌2026-09-28  Daily                               9d │
-│ FOLDERS                ││ 2026-09-29  Daily                               8d │
-│   Daily               2││ Books to read  Reading                          3d │
-│ ▸ Projects            3││ Garden Plan  Projects                           6d │
-│   Reading             1││ Ideas                                           7d │
-│ TAGS                   ││ Ideas  Projects                                 5d │
-│ #garden               2││ Shelves  Projects/Kitchen                       4d │
-│ #guide                1││ Welcome                                         2d │
-│ #inbox                1││                                                    │
-│ #journal              2││                                                    │
-│ #projects/garden      2││                                                    │
-│ #reading              1││                                                    │
-│ #start                1││                                                    │
-│                        ││                                                    │
-│                        ││                                                    │
-│                        ││                                                    │
-│                        ││                                                    │
-│                        ││                                                    │
-│                        ││                                                    │
-╰────────────────────────╯╰───────────────────────────────── 8 notes · a to z ─╯
- ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar
+╭─ ‹ All notes ────────────────────────────────────────────────────────────────╮
+│ ⌕ filter · enter to search all                                        ↕ name │
+│──────────────────────────────────────────────────────────────────────────────│
+│▌2026-09-28  Daily                                                         9d │
+│ 2026-09-29  Daily                                                         8d │
+│ Books to read  Reading                                                    3d │
+│ Garden Plan  Projects                                                     6d │
+│ Ideas                                                                     7d │
+│ Ideas  Projects                                                           5d │
+│ Shelves  Projects/Kitchen                                                 4d │
+│ Welcome                                                                   2d │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+╰─────────────────────────────────────────────────────────── 8 notes · a to z ─╯
+ ↑↓ notes   enter → read   esc ← folders   / search   ? keys   q quit

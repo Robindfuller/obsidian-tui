@@ -362,3 +362,74 @@ fn dragging_the_edge_resizes_the_list() {
     n.key(KeyCode::Enter);
     assert!(n.app.geo().list.is_none() && n.app.geo().note.is_some());
 }
+
+#[test]
+fn narrow_window_steps_folder_then_notes_then_note() {
+    use obsidian_tui::app::Stage;
+    let mut t = h("stages", 70, 24);
+    // opens on the notes; esc steps back to the sidebar, full width
+    assert_eq!(t.app.shown(), Stage::List);
+    let s = t.key(KeyCode::Esc);
+    assert_eq!(t.app.shown(), Stage::Rail);
+    assert!(s.contains("FOLDERS") && !s.contains("filter"));
+    golden("narrow-rail", &s);
+    // up and down move through the sidebar without leaving it
+    t.key(KeyCode::Down);
+    t.key(KeyCode::Down);
+    t.key(KeyCode::Down);
+    assert_eq!(t.app.view, "folder:Projects");
+    assert_eq!(t.app.shown(), Stage::Rail);
+    // → on a closed folder opens it; enter goes in
+    t.key(KeyCode::Char('h'));
+    t.key(KeyCode::Right);
+    assert!(t.app.open_folders.contains("Projects"));
+    assert_eq!(t.app.shown(), Stage::Rail);
+    let s = t.key(KeyCode::Enter);
+    assert_eq!(t.app.shown(), Stage::List);
+    assert!(s.contains("‹ Projects") && s.contains("3 notes"));
+    // the list: arrows move, enter reads
+    t.key(KeyCode::Down);
+    assert_eq!(sel(&t), "Projects/Ideas.md");
+    t.key(KeyCode::Up);
+    let s = t.key(KeyCode::Enter);
+    assert_eq!(t.app.shown(), Stage::Note);
+    assert!(s.contains("The plan for the spring"));
+    // in the note, arrows scroll it rather than changing note
+    t.key(KeyCode::Down);
+    assert_eq!(t.app.note_scroll, 1);
+    assert_eq!(note(&t), "Projects/Garden Plan.md");
+    // links still work, and back steps out one at a time
+    t.click_text("Welcome.");
+    assert_eq!(note(&t), "Welcome.md");
+    assert_eq!(t.app.shown(), Stage::Note);
+    t.key(KeyCode::Left);
+    assert_eq!(t.app.shown(), Stage::List);
+    t.key(KeyCode::Esc);
+    assert_eq!(t.app.shown(), Stage::Rail);
+}
+
+#[test]
+fn narrow_window_steps_by_clicking() {
+    use obsidian_tui::app::Stage;
+    let mut t = h("stage-clicks", 70, 24);
+    t.click_text("‹ All notes");
+    assert_eq!(t.app.shown(), Stage::Rail);
+    t.click_text("#journal");
+    assert_eq!(t.app.shown(), Stage::List);
+    assert_eq!(t.app.rows.len(), 2);
+    t.click_text("2026-09-29");
+    assert_eq!(t.app.shown(), Stage::Note);
+    t.click_text("‹ notes");
+    assert_eq!(t.app.shown(), Stage::List);
+    // search from the sidebar shows the list to type into
+    t.key(KeyCode::Esc);
+    t.key(KeyCode::Char('/'));
+    assert_eq!(t.app.shown(), Stage::List);
+    t.typ("compost");
+    t.key(KeyCode::Enter);
+    assert_eq!(t.app.rows.len(), 3);
+    // a wide window shows all three at once again
+    t.app.size = (150, 40);
+    let g = t.app.geo();
+    assert!(g.rail.width > 0 && g.list.is_some() && g.note.is_some());
+}

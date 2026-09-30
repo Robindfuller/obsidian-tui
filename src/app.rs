@@ -23,6 +23,15 @@ pub enum Focus {
     Rail,
 }
 
+/// A narrow window shows one pane at a time and steps through them:
+/// the sidebar, then the notes in what it picked, then the note.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Stage {
+    Rail,
+    List,
+    Note,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Sev {
     Info,
@@ -112,8 +121,8 @@ pub struct App {
     pub link_sel: Option<usize>,
     pub hit_idx: usize,
     pub scroll_to: Option<ScrollTo>,
-    /// narrow terminals show the list or the note, not both
-    pub narrow_note: bool,
+    /// which pane a narrow window is showing
+    pub stage: Stage,
     pub sort_mod: bool,
     pub list_w: u16,
     /// dragging the edge between the list and the note
@@ -208,7 +217,7 @@ impl App {
             link_sel: None,
             hit_idx: 0,
             scroll_to: None,
-            narrow_note: false,
+            stage: Stage::List,
             sort_mod: false,
             list_w: 42,
             dragging: false,
@@ -482,6 +491,7 @@ impl App {
         self.filter.set("");
         self.refresh_rows();
         self.select_first();
+        self.stage = Stage::List;
         self.save_state();
     }
 
@@ -567,7 +577,7 @@ impl App {
         }
         if let Some(k) = self.sel.clone() {
             self.open_note(&k, Nav::List);
-            self.narrow_note = true;
+            self.stage = Stage::Note;
         }
     }
 
@@ -602,7 +612,7 @@ impl App {
         self.link_sel = None;
         self.terms.clear();
         self.last_nav = Some(Nav::History);
-        self.narrow_note = true;
+        self.stage = Stage::Note;
     }
 
     /// The open note, drawn at `width` (cached until the note, the vault or
@@ -905,11 +915,20 @@ impl App {
         let j = (cur + d).clamp(0, keys.len() as i64 - 1) as usize;
         let k = keys[j].clone();
         self.rail_cursor = j;
+        let stage = self.stage;
         self.set_view(&k);
-        self.focus = Focus::Rail;
+        // moving through the sidebar doesn't leave it
+        self.stage = stage;
+        if !self.narrow() {
+            self.focus = Focus::Rail;
+        }
     }
 
     pub fn toggle_rail(&mut self) {
+        if self.narrow() {
+            // nothing to fold: the sidebar is its own step
+            return;
+        }
         self.rail_collapsed = !self.rail_collapsed;
         self.dirty = true;
         self.save_state();
@@ -955,7 +974,7 @@ impl App {
             Act::Fold(f) => self.toggle_fold(f),
             Act::Open { key, heading } => {
                 self.open_note(key, Nav::Link);
-                self.narrow_note = true;
+                self.stage = Stage::Note;
                 if let Some(h) = heading {
                     self.scroll_to = Some(ScrollTo::Heading(h.clone()));
                 }
@@ -986,6 +1005,7 @@ impl App {
                 self.link_sel = None;
             }
             Act::Back => self.back(),
+            Act::StageBack => self.stage_back(),
             Act::Forward => self.forward(),
             Act::Edit => self.edit(None),
             Act::Obsidian => {
@@ -1005,7 +1025,7 @@ impl App {
                     self.copy(format!("[[{n}]]"), "the link");
                 }
             }
-            Act::Filter => self.focus = Focus::Filter,
+            Act::Filter => self.focus_filter(),
             Act::Search => self.run_search(),
             Act::ClearSearch => self.clear_search(),
             Act::Sort => {
@@ -1096,7 +1116,7 @@ impl App {
         match k.as_str() {
             "open" => {
                 self.open_note(&ctx, Nav::List);
-                self.narrow_note = true;
+                self.stage = Stage::Note;
             }
             "edit" => self.edit(Some(ctx)),
             "obsidian" => self.run(&Act::Obsidian),
@@ -1117,14 +1137,40 @@ impl App {
             self.link_sel = None;
         } else if self.focus == Focus::Rail {
             self.focus = Focus::None;
-        } else if self.narrow_note && self.narrow() {
-            self.narrow_note = false;
         } else if !self.filter.value().is_empty() {
             self.filter.set("");
             self.refresh_rows();
+        } else if self.narrow() && self.stage != Stage::Rail {
+            self.stage_back();
         } else if self.view == "search" {
             self.clear_search();
         }
+    }
+
+    /// A narrow window's step back: the note to its list, the list to the sidebar.
+    pub fn stage_back(&mut self) {
+        self.stage = match self.stage {
+            Stage::Note => Stage::List,
+            _ => Stage::Rail,
+        };
+        self.focus = Focus::None;
+        self.link_sel = None;
+        self.dirty = true;
+    }
+
+    /// Which pane a narrow window shows now (a note stage needs a note).
+    pub fn shown(&self) -> Stage {
+        match self.stage {
+            Stage::Note if self.note.is_none() => Stage::List,
+            s => s,
+        }
+    }
+
+    /// Into the filter box; a narrow window shows the list to type into.
+    pub fn focus_filter(&mut self) {
+        self.focus = Focus::Filter;
+        self.stage = Stage::List;
+        self.dirty = true;
     }
 
     pub fn narrow(&self) -> bool {

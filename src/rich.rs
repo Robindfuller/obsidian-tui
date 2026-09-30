@@ -27,6 +27,8 @@ pub enum Act {
     /// jump to a line of the open note (the outline)
     Line(usize),
     Back,
+    /// a narrow window's step back
+    StageBack,
     Forward,
     Edit,
     Obsidian,

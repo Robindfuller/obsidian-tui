@@ -4,7 +4,7 @@
 
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 
-use crate::app::{App, Focus};
+use crate::app::{App, Focus, Stage};
 use crate::draw::{HitKind, Scroll};
 use crate::input::Ed;
 use crate::rich::Act;
@@ -61,6 +61,9 @@ impl App {
             }
             return;
         }
+        if self.narrow() && self.narrow_key(&k) {
+            return;
+        }
         if self.focus == Focus::Rail {
             match k.code {
                 KeyCode::Down | KeyCode::Char('j') => return self.rail_move(1),
@@ -109,8 +112,8 @@ impl App {
             KeyCode::Esc => self.escape(),
             KeyCode::Tab => self.next_link(1),
             KeyCode::BackTab => self.next_link(-1),
-            KeyCode::Char('/') => self.focus = Focus::Filter,
-            KeyCode::Char('f') if ctrl => self.focus = Focus::Filter,
+            KeyCode::Char('/') => self.focus_filter(),
+            KeyCode::Char('f') if ctrl => self.focus_filter(),
             KeyCode::Char('n') => self.next_hit(1),
             KeyCode::Char('N') => self.next_hit(-1),
             KeyCode::Char(c @ '1'..='3') => self.run(&Act::Tab(c as usize - '1' as usize)),
@@ -137,6 +140,50 @@ impl App {
             KeyCode::Char('?') => self.help(),
             _ => {}
         }
+    }
+
+    /// Keys that mean something different when a narrow window shows one
+    /// pane. Returns true if the key was used.
+    fn narrow_key(&mut self, k: &KeyEvent) -> bool {
+        if k.modifiers.contains(KeyModifiers::ALT) {
+            return false;
+        }
+        match self.shown() {
+            Stage::Rail => match k.code {
+                KeyCode::Down | KeyCode::Char('j') => self.rail_move(1),
+                KeyCode::Up | KeyCode::Char('k') => self.rail_move(-1),
+                KeyCode::Enter | KeyCode::Right | KeyCode::Char('l') => {
+                    // → on a closed folder opens it first; enter always goes in
+                    let closed = self.rail_entries().iter().any(|e| e.key.as_deref() == Some(&self.view) && e.fold == Some(false));
+                    match self.view.strip_prefix("folder:").map(str::to_string) {
+                        Some(f) if closed && k.code != KeyCode::Enter => self.toggle_fold(&f),
+                        _ => self.stage = Stage::List,
+                    }
+                }
+                KeyCode::Left | KeyCode::Char('h') => {
+                    if let Some(f) = self.view.strip_prefix("folder:").map(str::to_string)
+                        && self.open_folders.contains(&f)
+                    {
+                        self.toggle_fold(&f);
+                    }
+                }
+                KeyCode::Esc => {}
+                _ => return false,
+            },
+            Stage::List => match k.code {
+                KeyCode::Left | KeyCode::Char('h') => self.stage_back(),
+                KeyCode::Right | KeyCode::Char('l') => self.open_current(),
+                _ => return false,
+            },
+            Stage::Note => match k.code {
+                KeyCode::Down | KeyCode::Char('j') => self.scroll_note(1),
+                KeyCode::Up | KeyCode::Char('k') => self.scroll_note(-1),
+                KeyCode::Left | KeyCode::Char('h') => self.stage_back(),
+                KeyCode::Right | KeyCode::Char('l') => {}
+                _ => return false,
+            },
+        }
+        true
     }
 
     fn menu_key(&mut self, k: KeyEvent) {
@@ -318,7 +365,7 @@ impl App {
                 self.sel = Some(key.clone());
                 self.open_current();
                 if right {
-                    self.narrow_note = false;
+                    self.stage = Stage::List;
                     self.row_menu(&key, x as i32, y as i32);
                 }
             }

@@ -86,9 +86,13 @@ once.
 Drag the edge between the note list and the note to make the list wider or
 narrower (the note always keeps at least 40 columns); it's remembered.
 
-Right-click a note in the list for a menu. In a narrow terminal (under 100
-columns) the list and the note take turns: enter opens the note full width,
-esc goes back.
+Right-click a note in the list for a menu.
+
+In a narrow terminal (under 100 columns) it shows one pane at a time and you
+step through them: the sidebar (pick a folder or tag), then its notes, then the
+note, each the full width. Enter, → or a click goes forward; esc, ← or the ‹ in
+the title goes back. In the sidebar, ↑ ↓ move and ← → fold folders; in the
+note, ↑ ↓ scroll it. Widen the window and all three come back side by side.
 
 ## Look
 
