@@ -1,0 +1,60 @@
+╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ Welcome ──────────────────────────────────────────────────────────────────────╮
+│ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ Fern Vault  ·  edited 2d ago                                                   │
+│▌All notes             8││────────────────────────────────────────││                                                                                │
+│ Recent                8││ 2026-09-28  Daily                   9d ││  Note   Links 2   Outline 4                                                    │
+│ FOLDERS                ││ 2026-09-29  Daily                   8d ││ ━━━━━━──────────────────────────────────────────────────────────────────────── │
+│   Daily               2││ Books to read  Reading              3d ││                                                                                │
+│ ▸ Projects            3││ Garden Plan  Projects               6d ││ tags     #start #guide                                                         │
+│   Reading             1││ Ideas                               7d ││ aliases  Home, Start here                                                      │
+│ TAGS                   ││ Ideas  Projects                     5d ││ created  2026-09-01                                                            │
+│ #garden               2││ Shelves  Projects/Kitchen           4d ││ ────────────────────────────────────────                                       │
+│ #guide                1││▌Welcome                             2d ││                                                                                │
+│ #inbox                1││                                        ││ Welcome to the Fern Vault                                                      │
+│ #journal              2││                                        ││ ─────────────────────────────────────────────────────────────────────────────  │
+│ #projects/garden      2││                                        ││                                                                                │
+│ #reading              1││                                        ││ This is a made-up vault for testing, with emphasis, old ideas and inline       │
+│ #start                1││                                        ││ code. It has highlighted words too.                                            │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ See the Garden Plan and the shelf project. Jump straight to Garden Plan#Beds.  │
+│                        ││                                        ││ Here's a Missing Note that doesn't exist yet, and a web link to Obsidian.      │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ Tagged #inbox and #projects/garden.                                            │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ │ Tip of the day                                                               │
+│                        ││                                        ││ │ Water the ferns before breakfast.                                            │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ │ A plain quote across two lines.                                              │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ Tasks                                                                          │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ [ ] Order compost                                                              │
+│                        ││                                        ││ [x] Sweep the shed                                                             │
+│                        ││                                        ││ • Buy seeds                                                                    │
+│                        ││                                        ││   ◦ tomatoes                                                                   │
+│                        ││                                        ││   ◦ basil                                                                      │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ 1. First                                                                       │
+│                        ││                                        ││ 2. Second                                                                      │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ Table                                                                          │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ ╭───────┬─────────┬──────╮                                                     │
+│                        ││                                        ││ │ Bed   │  Plant  │ Rows │                                                     │
+│                        ││                                        ││ ├───────┼─────────┼──────┤                                                     │
+│                        ││                                        ││ │ North │ Carrots │    4 │                                                     │
+│                        ││                                        ││ │ South │  Beans  │    2 │                                                     │
+│                        ││                                        ││ ╰───────┴─────────┴──────╯                                                     │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ Code                                                                           │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││  python                                                                        │
+│                        ││                                        ││  def water(fern):                                                              │
+│                        ││                                        ││      return fern.soak(minutes=5)                                               │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ ─────────────────────────────────────────────────────────────────────────────  │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ ↳ diagram.png                                                                  │
+│                        ││                                        ││                                                                                │
+│                        ││                                        ││ See also Ideas and Brainstorm.                                                 │
+╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰────────────────────────────────────────────────────────── e edit · o obsidian ─╯
+ ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar   ? keys   q quit

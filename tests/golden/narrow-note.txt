@@ -1,0 +1,24 @@
+╭────────────────────────╮╭─ 2026-09-28 ───────────────────────────────────────╮
+│ Fern Vault            «││ Daily  ·  edited 9d ago                            │
+│▌All notes             8││                                                    │
+│ Recent                8││  Note   Links 0   Outline 1                        │
+│ FOLDERS                ││ ━━━━━━──────────────────────────────────────────── │
+│   Daily               2││                                                    │
+│ ▸ Projects            3││ Sunday                                             │
+│   Reading             1││ ─────────────────────────────────────────────────  │
+│ TAGS                   ││                                                    │
+│ #garden               2││ Walked the dog. Planned the beds in Garden Plan.   │
+│ #guide                1││ #journal                                           │
+│ #inbox                1││                                                    │
+│ #journal              2││                                                    │
+│ #projects/garden      2││                                                    │
+│ #reading              1││                                                    │
+│ #start                1││                                                    │
+│                        ││                                                    │
+│                        ││                                                    │
+│                        ││                                                    │
+│                        ││                                                    │
+│                        ││                                                    │
+│                        ││                                                    │
+╰────────────────────────╯╰──────────────────────────────── esc back · e edit ─╯
+ ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar

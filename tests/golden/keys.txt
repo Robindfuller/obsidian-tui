@@ -1,0 +1,30 @@
+╭────╮╭─ All notes ────────────────────────────╮╭─ 2026-09-28 ─────────────────────────────────────────────────────────╮
+│ »  ││ ⌕ filter · enter to search all  ↕ name ││ Daily  ·  edited 9d ago                                              │
+│▌All││────────────────────────────────────────││                                                                      │
+│ Rec││▌2026-09-28  Daily                   9d ││  Note   Links 0   Outline 1                                          │
+│    ││ 2026-09-29  Daily    ╭─ Keys ─────────────────────────────────────────────────────╮─────────────────────────── │
+│ Dai││ Books to read  Readin│ ↑ ↓  j k          move through the notes                   │                            │
+│ Pro││ Garden Plan  Projects│ enter             open the note (or the chosen link)       │                            │
+│ Rea││ Ideas                │ tab  shift+tab    step through links in the note           │──────────────────────────  │
+│    ││ Ideas  Projects      │ /                 filter titles; enter searches every note │                            │
+│ #ga││ Shelves  Projects/Kit│ n  N              next / previous search match             │n Plan. #journal            │
+│ #gu││ Welcome              │ [  ]  alt+← →     back / forward                           │                            │
+│ #in││                      │ ← h               move to the sidebar (→ to come back)     │                            │
+│ #jo││                      │ 1 2 3             note, links, outline                     │                            │
+│ #pr││                      │ space  pgup pgdn  scroll the note                          │                            │
+│ #re││                      │ J K  home end     scroll a line / to the ends              │                            │
+│ #st││                      │ e                 edit in $EDITOR                          │                            │
+│    ││                      │ o                 open in Obsidian                         │                            │
+│    ││                      │ y  Y              copy [[link]] / path                     │                            │
+│    ││                      │ s                 sort by name or date                     │                            │
+│    ││                      │ b                 fold the sidebar                         │                            │
+│    ││                      │ {  }              narrower / wider list                    │                            │
+│    ││                      │ r                 read the vault again                     │                            │
+│    ││                      │ q                 quit                                     │                            │
+│    ││                      ╰────────────────────────────────────────────────────────────╯                            │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────────────────── e edit · o obsidian ─╯
+ ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar   ? keys   q quit

@@ -1,0 +1,40 @@
+╭────────────────────────╮╭─ All notes ────────────────────────────╮╭─ Welcome ──────────────────────────────────────────────────────────────────────╮
+│ Fern Vault            «││ ⌕ filter · enter to search all  ↕ name ││ Fern Vault  ·  edited 2d ago                                                   │
+│▌All notes             8││────────────────────────────────────────││                                                                                │
+│ Recent                8││ 2026-09-28  Daily                   9d ││  Note   Links 2   Outline 4                                                    │
+│ FOLDERS                ││ 2026-09-29  Daily                   8d ││ ━━━━━━──────────────────────────────────────────────────────────────────────── │
+│   Daily               2││ Books to read  Reading              3d ││                                                                                │
+│ ▸ Projects            3││ Garden Plan  Projects               6d ││                                                                               ││
+│   Reading             1││ Ideas                               7d ││ Tasks                                                                         ││
+│ TAGS                   ││ Ideas  Projects                     5d ││                                                                               ││
+│ #garden               2││ Shelves  Projects/Kitchen           4d ││ [ ] Order compost                                                             ││
+│ #guide                1││▌Welcome                             2d ││ [x] Sweep the shed                                                            ││
+│ #inbox                1││                                        ││ • Buy seeds                                                                   ││
+│ #journal              2││                                        ││   ◦ tomatoes                                                                  ││
+│ #projects/garden      2││                                        ││   ◦ basil                                                                     ││
+│ #reading              1││                                        ││                                                                               ││
+│ #start                1││                                        ││ 1. First                                                                      ││
+│                        ││                                        ││ 2. Second                                                                     ││
+│                        ││                                        ││                                                                               ││
+│                        ││                                        ││ Table                                                                         ┃│
+│                        ││                                        ││                                                                               ┃│
+│                        ││                                        ││ ╭───────┬─────────┬──────╮                                                    ┃│
+│                        ││                                        ││ │ Bed   │  Plant  │ Rows │                                                    ┃│
+│                        ││                                        ││ ├───────┼─────────┼──────┤                                                    ┃│
+│                        ││                                        ││ │ North │ Carrots │    4 │                                                    ┃│
+│                        ││                                        ││ │ South │  Beans  │    2 │                                                    ┃│
+│                        ││                                        ││ ╰───────┴─────────┴──────╯                                                    ┃│
+│                        ││                                        ││                                                                               ┃│
+│                        ││                                        ││ Code                                                                          ┃│
+│                        ││                                        ││                                                                               ┃│
+│                        ││                                        ││  python                                                                       ┃│
+│                        ││                                        ││  def water(fern):                                                             ┃│
+│                        ││                                        ││      return fern.soak(minutes=5)                                              ┃│
+│                        ││                                        ││                                                                               ┃│
+│                        ││                                        ││ ───────────────────────────────────────────────────────────────────────────── ┃│
+│                        ││                                        ││                                                                               ┃│
+│                        ││                                        ││ ↳ diagram.png                                                                 ┃│
+│                        ││                                        ││                                                                               ┃│
+│                        ││                                        ││ See also Ideas and Brainstorm.                                                ┃│
+╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰────────────────────────────────────────────────────────── e edit · o obsidian ─╯
+ ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar   ? keys   q quit

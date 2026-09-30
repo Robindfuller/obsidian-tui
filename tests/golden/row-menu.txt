@@ -1,0 +1,30 @@
+╭────╮╭─ All notes ────────────────────────────╮╭─ Garden Plan ────────────────────────────────────────────────────────╮
+│ »  ││ ⌕ filter · enter to search all  ↕ name ││ Projects  ·  edited 6d ago                                           │
+│▌All││────────────────────────────────────────││                                                                      │
+│ Rec││ 2026-09-28  Daily                   9d ││  Note   Links 3   Outline 3                                          │
+│    ││ 2026-09-29  Daily                   8d ││ ━━━━━━────────────────────────────────────────────────────────────── │
+│ Dai││ Books to read  Reading              3d ││                                                                      │
+│ Pro││▌╭─ Garden Plan ───────────────╮     6d ││ tags    #garden #projects/garden                                     │
+│ Rea││ │ Open                  enter │     7d ││ status  active                                                       │
+│    ││ │ Open in your editor       e │     5d ││ ────────────────────────────────────────                             │
+│ #ga││ │ Open in Obsidian          o │     4d ││                                                                      │
+│ #gu││ │─────────────────────────────│     2d ││ Garden Plan                                                          │
+│ #in││ │ Copy [[link]]             y │        ││ ───────────────────────────────────────────────────────────────────  │
+│ #jo││ │ Copy path                 Y │        ││                                                                      │
+│ #pr││ │ Show its folder             │        ││ The plan for the spring. Back to Welcome.                            │
+│ #re││ ╰─────────────────────────────╯        ││                                                                      │
+│ #st││                                        ││ Beds                                                                 │
+│    ││                                        ││                                                                      │
+│    ││                                        ││ Four raised beds along the fence. Compost first, then seeds.         │
+│    ││                                        ││                                                                      │
+│    ││                                        ││ Budget                                                               │
+│    ││                                        ││                                                                      │
+│    ││                                        ││ About forty pounds for timber. See Kitchen/Shelves for the offcuts.  │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+│    ││                                        ││                                                                      │
+╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────────────────── e edit · o obsidian ─╯
+ ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar   ? keys   q quit
