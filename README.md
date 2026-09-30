@@ -4,8 +4,10 @@ An Obsidian vault in the terminal, in the style of btop and herdr. A sidebar
 of folders and tags, the list of notes, and the note itself rendered, with
 every link, tag and folder clickable and a search across the whole vault.
 
-It only reads your vault. Editing happens in your own editor (`e`), and
-Obsidian's own `.obsidian` folder is never touched.
+Press `e` to edit a note right there, in a simple built-in editor (no modes:
+just type, ctrl+s to save). `E` hands it to your own `$EDITOR` instead. The
+app writes to your vault only when you save in that editor, and never touches
+Obsidian's own `.obsidian` folder.
 
 Runs on Linux, macOS and Windows (Windows Terminal).
 
@@ -59,6 +61,37 @@ wins when two share a name), then an alias from frontmatter.
 The vault is watched: notes you add, change or delete elsewhere show up at
 once.
 
+## Editing
+
+`e` opens the note in a built-in editor in the note's place (the whole window
+when it's narrow). There are no modes, like nano:
+
+| Key | Does |
+| --- | --- |
+| type, enter, backspace, delete | what you'd expect |
+| arrows, home, end, pgup, pgdn | move (home again goes to the very start of the line) |
+| ctrl+arrows, ctrl+home/end | a word at a time, the start or end of the note |
+| shift + any of those, or drag | select |
+| click | put the cursor there; the wheel scrolls |
+| ctrl+c, ctrl+x, ctrl+v | copy, cut, paste (the whole line if nothing's selected) |
+| ctrl+a | select everything |
+| ctrl+z, ctrl+y (or ctrl+shift+z) | undo, redo |
+| ctrl+f | find; enter for the next match, shift+enter the one before, esc to close |
+| tab, shift+tab | indent the way the file does (tabs or spaces), outdent |
+| ctrl+s | save |
+| esc | done; asks Save / Discard / Keep editing if there's anything unsaved |
+
+Long lines wrap on screen, never in the file. Headings, links, tags and code
+are coloured. Copy and paste use the system clipboard where there is one
+(Wayland, X11, macOS, Windows), and pasting from the terminal works too.
+
+Saving is careful. The file keeps its line endings (Windows CRLF stays CRLF),
+its byte-order mark and whether it ends with a newline. The text goes to a
+hidden temp file beside the note, which is then renamed over it, so a crash
+can't leave half a note. If the file changed on disk after you opened it
+(Obsidian or sync got there first) it asks whether to save yours over it, load
+theirs, or keep editing. Files that aren't UTF-8 text are left alone: use `E`.
+
 ## Keys
 
 | Key | Does |
@@ -73,7 +106,8 @@ once.
 | 1 2 3 | Note, Links, Outline |
 | space, pgup, pgdn, ctrl+d, ctrl+u | scroll the note |
 | J K, home, end | scroll a line, or to the top or bottom |
-| e | edit in `$VISUAL` / `$EDITOR` (notepad on Windows, else nano or vi) |
+| e | edit the note here (see Editing) |
+| E | edit in `$VISUAL` / `$EDITOR` (notepad on Windows, else nano or vi) |
 | o | open the note in the Obsidian app |
 | y, Y | copy `[[link]]` / the file's path (over OSC 52) |
 | s | sort by name or by date |
@@ -111,7 +145,7 @@ Windows).
 ## Develop
 
 ```sh
-cargo test                     # screens, clicks, links, search, watching
+cargo test                     # screens, clicks, links, search, watching, editing
 cargo clippy --all-targets
 UPDATE_GOLDEN=1 cargo test     # rewrite the saved screens in tests/golden
 obsidian-tui --dump 150x40 --steps "text:Welcome;key:tab,enter" tests/fixtures/vault

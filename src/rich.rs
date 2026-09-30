@@ -30,7 +30,10 @@ pub enum Act {
     /// a narrow window's step back
     StageBack,
     Forward,
+    /// edit here, in the built-in editor
     Edit,
+    /// edit in $VISUAL / $EDITOR
+    EditOutside,
     Obsidian,
     CopyPath,
     CopyLink,

@@ -13,7 +13,8 @@
 │ #jo││                      │ 1 2 3             note, links, outline                     │                            │
 │ #pr││                      │ space  pgup pgdn  scroll the note                          │                            │
 │ #re││                      │ J K  home end     scroll a line / to the ends              │                            │
-│ #st││                      │ e                 edit in $EDITOR                          │                            │
+│ #st││                      │ e                 edit here (ctrl+s saves, esc done)       │                            │
+│    ││                      │ E                 edit in your own $EDITOR                 │                            │
 │    ││                      │ o                 open in Obsidian                         │                            │
 │    ││                      │ y  Y              copy [[link]] / path                     │                            │
 │    ││                      │ s                 sort by name or date                     │                            │
@@ -25,6 +26,5 @@
 │    ││                                        ││                                                                      │
 │    ││                                        ││                                                                      │
 │    ││                                        ││                                                                      │
-│    ││                                        ││                                                                      │
-╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────────────────── e edit · o obsidian ─╯
- ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar   ? keys   q quit
+╰────╯╰───────────────────── 8 notes · a to z ─╯╰──────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
+ ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   E $EDITOR   b sidebar   ? keys   q quit

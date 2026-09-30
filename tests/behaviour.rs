@@ -262,12 +262,12 @@ fn sort_by_date_and_recent() {
 // ------------------------------------------------------------ outside
 
 #[test]
-fn edit_hands_the_path_to_the_editor_and_nothing_is_written() {
+fn big_e_hands_the_path_to_your_editor_and_nothing_is_written() {
     let (v, st) = vault("readonly");
     let before = snapshot(&v);
     let mut t = obsidian_tui::harness::H::new(&v, &st, 150, 40);
     t.click_text("Welcome");
-    t.key(KeyCode::Char('e'));
+    t.key(KeyCode::Char('E'));
     assert_eq!(t.app.pending_edit.as_deref(), Some(v.join("Welcome.md").as_path()));
     t.key(KeyCode::Char('o'));
     assert_eq!(t.app.opened.last().unwrap(), "obsidian://open?vault=Fern%20Vault&file=Welcome");

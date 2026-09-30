@@ -18,6 +18,7 @@ base64 = "0.22"
 regex = "1"
 percent-encoding = "2"
 serde_json = "1"
+arboard = { version = "3", default-features = false, features = ["wayland-data-control"] }
 
 [profile.release]
 opt-level = 3

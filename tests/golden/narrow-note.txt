@@ -21,4 +21,4 @@
 │                                                                              │
 │                                                                              │
 ╰───────────────────────────────────────────── esc back to the notes · e edit ─╯
- ↑↓ scroll   tab links   esc ← notes   [ ] back   e edit   q quit
+ ↑↓ scroll   tab links   esc ← notes   [ ] back   e edit   E $EDITOR   q quit

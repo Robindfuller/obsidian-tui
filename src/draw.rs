@@ -600,6 +600,10 @@ fn input_box(
 }
 
 fn draw_note(app: &mut App, p: &mut P, r: Rect) {
+    if app.editor.is_some() {
+        draw_editor(app, p, r);
+        return;
+    }
     let (ink, faint, dim, line, acc) = (app.t.c("ink"), app.t.c("faint"), app.t.c("dim"), app.t.c("line"), app.t.c("accent"));
     let Some(key) = app.note.clone() else {
         p.frame(r, line, None, None);
@@ -609,7 +613,7 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
     };
     let Some(note) = app.vault.note(&key) else { return };
     let (name, folder, mtime) = (note.name.clone(), note.folder.clone(), note.mtime);
-    let sub = if app.narrow() { "esc back to the notes · e edit" } else { "e edit · o obsidian" };
+    let sub = if app.narrow() { "esc back to the notes · e edit" } else { "e edit · E $EDITOR · o obsidian" };
     p.frame(r, line, Some((&name, ink, true)), Some((sub, faint)));
     let inn = Rect::new(r.x + 2, r.y + 1, r.width.saturating_sub(4), r.height.saturating_sub(2));
     if inn.width < 4 || inn.height < 4 {
@@ -696,6 +700,102 @@ fn draw_note(app: &mut App, p: &mut P, r: Rect) {
     if lines.len() > h {
         p.scrollbar(r.right() - 2, body.y, body.height, lines.len(), app.note_scroll, faint, line);
     }
+}
+
+/// The built-in editor, in the note's place.
+fn draw_editor(app: &mut App, p: &mut P, r: Rect) {
+    use crate::editor::{Tint, ew, tints};
+    let (ink, faint, dim, acc, line) = (app.t.c("ink"), app.t.c("faint"), app.t.c("dim"), app.t.c("accent"), app.t.c("line"));
+    let (amber, flame, cyan, sea) = (app.t.c("amber"), app.t.c("flame"), app.t.c("cyan"), app.t.c("sea"));
+    let sel_bg = app.t.c("raise");
+    let name = app.vault.note(&app.editor.as_ref().unwrap().key).map(|n| n.name.clone()).unwrap_or_default();
+    let ed = app.editor.as_mut().unwrap();
+    let title = format!("Editing: {name}");
+    let sub = if ed.modified { "● not saved" } else { "saved" };
+    let old = p.bg;
+    p.frame(r, acc, Some((&title, ink, true)), Some((sub, if ed.modified { amber } else { faint })));
+    let inn = Rect::new(r.x + 2, r.y + 1, r.width.saturating_sub(4), r.height.saturating_sub(2));
+    if inn.width < 6 || inn.height < 4 {
+        return;
+    }
+    // where the cursor is, and the file's line endings
+    let mut head = vec![sp(format!("line {}, col {}", ed.row + 1, ed.col + 1), faint)];
+    if ed.crlf {
+        head.push(sp("  ·  CRLF", faint));
+    }
+    if let Some(s) = ed.selected() {
+        let n = s.chars().count();
+        head.push(sp(format!("  ·  {n} selected"), faint));
+    }
+    p.line(inn.x, inn.y, &head, inn.right(), p.bg);
+    let find_h = if ed.find.is_some() { 2 } else { 0 };
+    let body = Rect::new(inn.x, inn.y + 2, inn.width, inn.height.saturating_sub(2 + find_h));
+    let tw = body.width.saturating_sub(2) as usize;
+    let h = body.height as usize;
+    ed.width = tw;
+    ed.height = h;
+    let lay = ed.layout(tw);
+    if ed.follow {
+        ed.keep_visible(&lay, h);
+        ed.follow = false;
+    }
+    ed.scroll = ed.scroll.min(lay.len().saturating_sub(1));
+    let tint = tints(&ed.lines);
+    let sel = ed.sel();
+    let (cvr, cx) = ed.vis(&lay, ed.row, ed.col);
+    for (i, vr) in lay.iter().enumerate().skip(ed.scroll).take(h) {
+        let y = body.y + (i - ed.scroll) as u16;
+        let l = &ed.lines[vr.line];
+        let mut x = body.x;
+        for (c, &ch) in l.iter().enumerate().take(vr.end).skip(vr.start) {
+            let t = tint[vr.line].get(c).copied().unwrap_or(Tint::Plain);
+            let fg = match t {
+                Tint::Plain => ink,
+                Tint::Heading => acc,
+                Tint::Link => sea,
+                Tint::Tag => cyan,
+                Tint::Code => amber,
+                Tint::Marker => faint,
+                Tint::Front => dim,
+            };
+            let on = sel.is_some_and(|(a, b)| (vr.line, c) >= a && (vr.line, c) < b);
+            let mut st = Style::default().fg(fg).bg(if on { sel_bg } else { p.bg });
+            if t == Tint::Heading {
+                st = st.add_modifier(Modifier::BOLD);
+            }
+            let s = if ch == '\t' { " ".repeat(ew(ch)) } else { ch.to_string() };
+            x = p.put(x, y, &s, st, body.x + tw as u16 + 1);
+        }
+        // a selected line break shows as one cell
+        if sel.is_some_and(|(a, b)| (vr.line, vr.end) >= a && (vr.line, vr.end) < b) && vr.end == l.len() {
+            p.put(x, y, " ", Style::default().bg(sel_bg), body.x + tw as u16 + 1);
+        }
+        if i == cvr {
+            let cx = body.x + cx as u16;
+            let under = l.get(ed.col).filter(|_| ed.col < vr.end || vr.end == l.len()).copied();
+            let under = match under {
+                Some('\t') | None => " ".to_string(),
+                Some(c) => c.to_string(),
+            };
+            p.put(cx, y, &under, Style::default().add_modifier(Modifier::REVERSED).fg(ink), body.x + tw as u16 + 1);
+        }
+    }
+    if lay.len() > h {
+        p.scrollbar(body.right(), body.y, body.height, lay.len(), ed.scroll, faint, line);
+    }
+    app.edit_area = Rect::new(body.x, body.y, tw as u16, body.height);
+    // the find box
+    if let Some(f) = ed.find.as_mut() {
+        let fy = body.bottom() + 1;
+        let soft = app.t.c("line-soft");
+        p.put(inn.x, fy - 1, &"─".repeat(inn.width as usize), Style::default().fg(soft).bg(p.bg), inn.right());
+        let x = p.put(inn.x, fy, "Find ", Style::default().fg(acc).bg(p.bg).add_modifier(Modifier::BOLD), inn.right());
+        let tail = if ed.find_miss { "  no match" } else { "  enter next · shift+enter back · esc close" };
+        let fw = inn.width.saturating_sub(5 + crate::util::cell_len(tail) as u16).max(8);
+        input_box(p, f, x, fy, fw, "type to find", true, ink, faint, acc);
+        p.put(x + fw, fy, tail, Style::default().fg(if ed.find_miss { flame } else { faint }).bg(p.bg), inn.right());
+    }
+    p.bg = old;
 }
 
 fn draw_menu(app: &mut App, p: &mut P) {
@@ -811,6 +911,27 @@ impl App {
             v
         };
         let mut out = vec![];
+        if let Some(ed) = &self.editor {
+            let n = |key: &str, what: &str| vec![sp(key, ink), sp(format!(" {what}"), faint), plain("  ")];
+            if ed.find.is_some() {
+                out.extend(n("enter", "next"));
+                out.extend(n("shift+enter", "back"));
+                out.extend(n("esc", "close find"));
+                out.extend(n("^S", "save"));
+                return out;
+            }
+            out.extend(n("^S", "save"));
+            out.extend(n("esc", "done"));
+            out.extend(n("^F", "find"));
+            out.extend(n("^Z", "undo"));
+            out.extend(n("^Y", "redo"));
+            out.extend(n("^C", "copy"));
+            out.extend(n("^X", "cut"));
+            out.extend(n("^V", "paste"));
+            out.extend(n("^A", "all"));
+            out.extend(n("shift+arrows", "select"));
+            return out;
+        }
         if self.focus == Focus::Filter {
             out.extend(k("enter", "search every note", Some(Act::Search)));
             out.extend(k("↑↓", "move", None));
@@ -842,6 +963,7 @@ impl App {
                     out.extend(k("esc ←", "notes", Some(Act::StageBack)));
                     out.extend(k("[ ]", "back", Some(Act::Back)));
                     out.extend(k("e", "edit", Some(Act::Edit)));
+                    out.extend(k("E", "$EDITOR", Some(Act::EditOutside)));
                     out.extend(k("q", "quit", Some(Act::Quit)));
                     return out;
                 }
@@ -862,6 +984,7 @@ impl App {
             out.extend(k("n", "match", Some(Act::NextHit)));
         }
         out.extend(k("e", "edit", Some(Act::Edit)));
+        out.extend(k("E", "$EDITOR", Some(Act::EditOutside)));
         out.extend(k("b", "sidebar", Some(Act::ToggleRail)));
         out.extend(k("?", "keys", Some(Act::Help)));
         out.extend(k("q", "quit", Some(Act::Quit)));

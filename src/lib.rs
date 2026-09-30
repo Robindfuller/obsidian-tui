@@ -4,6 +4,7 @@
 
 pub mod app;
 pub mod draw;
+pub mod editor;
 pub mod events;
 pub mod harness;
 pub mod input;

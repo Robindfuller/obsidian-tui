@@ -15,6 +15,15 @@ impl App {
             return;
         }
         self.dirty = true;
+        // editing takes every key (ctrl+c copies there), apart from its prompts
+        if self.editor.is_some() {
+            if self.modals.is_empty() {
+                self.editor_key(&k);
+            } else {
+                self.menu_key(k);
+            }
+            return;
+        }
         let ctrl = k.modifiers.contains(KeyModifiers::CONTROL);
         let alt = k.modifiers.contains(KeyModifiers::ALT);
         if ctrl && matches!(k.code, KeyCode::Char('c') | KeyCode::Char('q')) {
@@ -125,7 +134,8 @@ impl App {
             KeyCode::Char('K') => self.scroll_note(-1),
             KeyCode::Home => self.note_scroll = 0,
             KeyCode::End => self.note_scroll = usize::MAX / 2,
-            KeyCode::Char('e') => self.edit(None),
+            KeyCode::Char('e') => self.open_editor(None),
+            KeyCode::Char('E') => self.edit(None),
             KeyCode::Char('o') => self.run(&Act::Obsidian),
             KeyCode::Char('y') => self.run(&Act::CopyLink),
             KeyCode::Char('Y') => self.run(&Act::CopyPath),
@@ -246,6 +256,13 @@ impl App {
 
     pub fn on_paste(&mut self, s: &str) {
         self.dirty = true;
+        if let Some(ed) = self.editor.as_mut() {
+            match ed.find.as_mut() {
+                Some(f) => f.insert(s.lines().next().unwrap_or("")),
+                None => ed.insert(s),
+            }
+            return;
+        }
         if self.focus == Focus::Filter {
             self.filter.insert(s.lines().next().unwrap_or(""));
             self.refresh_rows();
@@ -280,6 +297,9 @@ impl App {
             self.dirty = true;
             return;
         }
+        if self.editor.is_some() && self.modals.is_empty() && self.editor_mouse(&m) {
+            return;
+        }
         match m.kind {
             MouseEventKind::Moved | MouseEventKind::Drag(_) => {
                 if self.mouse != Some((x, y)) {
@@ -296,6 +316,59 @@ impl App {
             }
             _ => {}
         }
+    }
+
+    /// The mouse while editing: click places the cursor, drag selects,
+    /// the wheel scrolls. Clicks elsewhere do nothing until esc.
+    fn editor_mouse(&mut self, m: &MouseEvent) -> bool {
+        let (x, y) = (m.column, m.row);
+        let a = self.edit_area;
+        let shift = m.modifiers.contains(KeyModifiers::SHIFT);
+        let Some(ed) = self.editor.as_mut() else { return false };
+        let inside = x >= a.x && x < a.right() + 1 && y >= a.y && y < a.bottom();
+        let rel = |x: u16, y: u16| -> (usize, usize) {
+            (y.saturating_sub(a.y).min(a.height.saturating_sub(1)) as usize, x.saturating_sub(a.x) as usize)
+        };
+        match m.kind {
+            MouseEventKind::Down(MouseButton::Left) if inside => {
+                let (vr, cx) = rel(x, y);
+                ed.click(vr, cx, shift);
+                ed.selecting = true;
+                ed.follow = true;
+            }
+            MouseEventKind::Drag(MouseButton::Left) if ed.selecting => {
+                // past the top or bottom edge: scroll as well
+                if y < a.y {
+                    ed.wheel(-1);
+                } else if y >= a.bottom() {
+                    ed.wheel(1);
+                }
+                let (vr, cx) = rel(x, y);
+                ed.click(vr, cx, true);
+                ed.follow = true;
+            }
+            MouseEventKind::Up(MouseButton::Left) if ed.selecting => {
+                ed.selecting = false;
+                if ed.sel().is_none() {
+                    ed.anchor = None;
+                }
+            }
+            MouseEventKind::ScrollDown if inside => ed.wheel(3),
+            MouseEventKind::ScrollUp if inside => ed.wheel(-3),
+            MouseEventKind::Down(_) => {
+                // toasts can still be dismissed; nothing else outside the editor
+                if let Some(h) = self.hits.iter().rev().find(|h| h.r.contains((x, y).into()))
+                    && let HitKind::Act(Act::Toast(id)) = h.k
+                {
+                    self.toasts.retain(|t| t.id != id);
+                }
+            }
+            MouseEventKind::Moved | MouseEventKind::Drag(_) => return false,
+            _ => {}
+        }
+        self.mouse = Some((x, y));
+        self.dirty = true;
+        true
     }
 
     /// The wheel scrolls whatever is under the mouse, and never moves focus.

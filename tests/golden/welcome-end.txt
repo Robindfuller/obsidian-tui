@@ -36,5 +36,5 @@
 │                        ││                                        ││ ↳ diagram.png                                                                 ┃│
 │                        ││                                        ││                                                                               ┃│
 │                        ││                                        ││ See also Ideas and Brainstorm.                                                ┃│
-╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰────────────────────────────────────────────────────────── e edit · o obsidian ─╯
- ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   b sidebar   ? keys   q quit
+╰────────────────────────╯╰───────────────────── 8 notes · a to z ─╯╰────────────────────────────────────────────── e edit · E $EDITOR · o obsidian ─╯
+ ↑↓ notes   enter open   / search   tab links   [ ] back   e edit   E $EDITOR   b sidebar   ? keys   q quit

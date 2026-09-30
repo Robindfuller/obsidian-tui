@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use serde_json::{Value, json};
 
 use crate::draw::Hit;
+use crate::editor::{Clip, Editor, Out, Saved};
 use crate::input::LineEdit;
 use crate::md::{Rendered, render};
 use crate::rich::{Act, Line, plain, sp};
@@ -143,6 +144,11 @@ pub struct App {
     /// what was opened outside the app (tests look here)
     pub opened: Vec<String>,
     pub headless: bool,
+    /// the built-in editor, while a note is being edited
+    pub editor: Option<Editor>,
+    pub clip: Clip,
+    /// where the editor's text was drawn, for the mouse
+    pub edit_area: ratatui::layout::Rect,
     watch_rx: Option<Receiver<()>>,
     _watcher: Option<notify::RecommendedWatcher>,
     rescan_at: Option<Instant>,
@@ -234,6 +240,9 @@ impl App {
             pending_out: vec![],
             opened: vec![],
             headless: false,
+            editor: None,
+            clip: Clip::default(),
+            edit_area: ratatui::layout::Rect::default(),
             watch_rx: None,
             _watcher: None,
             rescan_at: None,
@@ -947,6 +956,130 @@ impl App {
         }
     }
 
+    // ------------------------------------------------------------ editing
+    /// Edit a note here: the open one, or the selected one.
+    pub fn open_editor(&mut self, key: Option<String>) {
+        let Some(k) = key.or(self.note.clone()).or(self.sel.clone()) else { return };
+        match Editor::open(&k, &self.vault.path_of(&k)) {
+            Ok(ed) => {
+                if self.note.as_deref() != Some(k.as_str()) {
+                    self.open_note(&k, Nav::List);
+                }
+                self.editor = Some(ed);
+                self.stage = Stage::Note;
+                self.focus = Focus::None;
+                self.link_sel = None;
+                self.dirty = true;
+            }
+            Err(e) => self.toast("Can't edit this note", &e, Sev::Error),
+        }
+    }
+
+    /// A key while editing.
+    pub fn editor_key(&mut self, k: &ratatui::crossterm::event::KeyEvent) {
+        let Some(ed) = self.editor.as_mut() else { return };
+        match ed.key(k) {
+            Out::Nothing => {}
+            Out::Save => self.editor_save(false),
+            Out::Leave => self.editor_leave(),
+            Out::Copy(s) => {
+                self.clip.set(&s);
+                if !self.headless {
+                    self.pending_out.push(osc52(&s));
+                }
+            }
+            Out::Paste => {
+                let s = self.clip.get();
+                if let Some(ed) = self.editor.as_mut() {
+                    ed.insert(&s);
+                }
+            }
+        }
+    }
+
+    pub fn editor_save(&mut self, then_leave: bool) {
+        let Some(ed) = self.editor.as_mut() else { return };
+        match ed.save(false) {
+            Saved::Ok => self.saved(then_leave),
+            Saved::ChangedOnDisk => self.editor_ask(
+                if then_leave { "disk-leave" } else { "disk" },
+                "Changed on disk since you opened it",
+                &[
+                    ("overwrite", "Save mine over it"),
+                    ("reload", "Throw mine away, load theirs"),
+                    ("keep", "Keep editing"),
+                ],
+            ),
+            Saved::Err(e) => self.toast("Couldn't save", &e, Sev::Error),
+        }
+    }
+
+    fn saved(&mut self, then_leave: bool) {
+        self.toast("", "Saved.", Sev::Info);
+        self.rescan_now();
+        if then_leave {
+            self.close_editor();
+        }
+    }
+
+    /// Esc: done, unless there's something unsaved to ask about.
+    pub fn editor_leave(&mut self) {
+        if self.editor.as_ref().is_some_and(|e| e.modified) {
+            self.editor_ask(
+                "unsaved",
+                "Save your changes?",
+                &[("save", "Save"), ("discard", "Discard them"), ("keep", "Keep editing")],
+            );
+        } else {
+            self.close_editor();
+        }
+    }
+
+    pub fn close_editor(&mut self) {
+        self.editor = None;
+        self.rescan_now();
+        self.dirty = true;
+    }
+
+    fn editor_ask(&mut self, what: &str, title: &str, opts: &[(&str, &str)]) {
+        let ink = self.t.c("ink");
+        let (w, h) = self.size;
+        self.modals.push(Modal {
+            title: title.into(),
+            opts: opts.iter().map(|(k, l)| Some((k.to_string(), vec![sp(*l, ink)]))).collect(),
+            x: (w as i32 - 40) / 2,
+            y: (h as i32 - 6) / 2,
+            hi: Some(0),
+            top: 0,
+            ctx: format!("editor:{what}"),
+        });
+        self.dirty = true;
+    }
+
+    fn editor_answer(&mut self, what: &str, k: &str) {
+        match (what, k) {
+            ("unsaved", "save") => self.editor_save(true),
+            ("unsaved", "discard") => self.close_editor(),
+            ("disk" | "disk-leave", "overwrite") => {
+                let r = self.editor.as_mut().map(|e| e.save(true));
+                match r {
+                    Some(Saved::Ok) => self.saved(what == "disk-leave"),
+                    Some(Saved::Err(e)) => self.toast("Couldn't save", &e, Sev::Error),
+                    _ => {}
+                }
+            }
+            ("disk" | "disk-leave", "reload") => {
+                let r = self.editor.as_mut().map(|e| e.reload());
+                match r {
+                    Some(Ok(())) => self.toast("", "Loaded the version on disk.", Sev::Info),
+                    Some(Err(e)) => self.toast("Couldn't load it", &e, Sev::Error),
+                    None => {}
+                }
+            }
+            _ => {}
+        }
+    }
+
     pub fn edit(&mut self, key: Option<String>) {
         let Some(k) = key.or(self.note.clone()).or(self.sel.clone()) else { return };
         self.pending_edit = Some(self.vault.path_of(&k));
@@ -1007,7 +1140,8 @@ impl App {
             Act::Back => self.back(),
             Act::StageBack => self.stage_back(),
             Act::Forward => self.forward(),
-            Act::Edit => self.edit(None),
+            Act::Edit => self.open_editor(None),
+            Act::EditOutside => self.edit(None),
             Act::Obsidian => {
                 if let Some(k) = self.note.clone() {
                     let u = self.obsidian_url(&k);
@@ -1053,7 +1187,8 @@ impl App {
             title: name,
             opts: vec![
                 o("open", "Open", "enter"),
-                o("edit", "Open in your editor", "e"),
+                o("edit", "Edit here", "e"),
+                o("outside", "Edit in your own editor", "E"),
                 o("obsidian", "Open in Obsidian", "o"),
                 None,
                 o("copylink", "Copy [[link]]", "y"),
@@ -1081,7 +1216,8 @@ impl App {
             ("1 2 3", "note, links, outline"),
             ("space  pgup pgdn", "scroll the note"),
             ("J K  home end", "scroll a line / to the ends"),
-            ("e", "edit in $EDITOR"),
+            ("e", "edit here (ctrl+s saves, esc done)"),
+            ("E", "edit in your own $EDITOR"),
             ("o", "open in Obsidian"),
             ("y  Y", "copy [[link]] / path"),
             ("s", "sort by name or date"),
@@ -1110,6 +1246,10 @@ impl App {
         let Some(m) = self.modals.pop() else { return };
         let Some(k) = key else { return };
         let ctx = m.ctx;
+        if let Some(what) = ctx.strip_prefix("editor:") {
+            self.editor_answer(what, &k);
+            return;
+        }
         if !ctx.is_empty() && self.note.as_deref() != Some(ctx.as_str()) {
             self.open_note(&ctx, Nav::List);
         }
@@ -1118,7 +1258,8 @@ impl App {
                 self.open_note(&ctx, Nav::List);
                 self.stage = Stage::Note;
             }
-            "edit" => self.edit(Some(ctx)),
+            "edit" => self.open_editor(Some(ctx)),
+            "outside" => self.edit(Some(ctx)),
             "obsidian" => self.run(&Act::Obsidian),
             "copylink" => self.run(&Act::CopyLink),
             "copypath" => self.run(&Act::CopyPath),
@@ -1161,7 +1302,7 @@ impl App {
     /// Which pane a narrow window shows now (a note stage needs a note).
     pub fn shown(&self) -> Stage {
         match self.stage {
-            Stage::Note if self.note.is_none() => Stage::List,
+            Stage::Note if self.note.is_none() && self.editor.is_none() => Stage::List,
             s => s,
         }
     }

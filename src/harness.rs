@@ -20,6 +20,7 @@ impl H {
     pub fn new(vault: &Path, state: &Path, w: u16, h: u16) -> H {
         let mut app = App::with_state(vault, state.to_path_buf());
         app.headless = true;
+        app.clip.off = true;
         app.size = (w, h);
         let mut hh = H { app, buf: Buffer::empty(Rect::new(0, 0, w, h)) };
         hh.render();
